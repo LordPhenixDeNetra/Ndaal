@@ -1,0 +1,29 @@
+# cargo-deny configuration (T01.02, constraint C-02, ENF-SEC-02).
+
+[licenses]
+# Allowed licenses: exactly the list of constraint C-02 (CAHIER_DES_CHARGES.md section 8).
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-DFS-2016",
+    "MPL-2.0",
+]
+confidence-threshold = 0.93
+# Allowed licenses not yet used by any dependency are fine.
+unused-allowed-license = "allow"
+# Workspace crates are checked too (no private.ignore).
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+
+[advisories]
+# Defaults: known vulnerabilities and yanked versions are rejected.

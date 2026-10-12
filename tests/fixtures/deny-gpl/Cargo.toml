@@ -1,0 +1,9 @@
+[package]
+name = "deny-gpl-fixture"
+description = "Fixture: a GPL-licensed crate that cargo deny must reject"
+version = "0.0.0"
+edition = "2024"
+license = "GPL-3.0-only"
+publish = false
+
+[workspace]
