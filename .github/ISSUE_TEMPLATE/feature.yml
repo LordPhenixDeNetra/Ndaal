@@ -1,0 +1,20 @@
+name: Feature request
+description: A need that Ndaal does not cover yet.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Need
+      description: What you are trying to do, and why the current behavior is not enough.
+    validations:
+      required: true
+  - type: input
+    id: requirement
+    attributes:
+      label: Related requirement or use case
+      description: An EF-, ENF- or UC- identifier from CAHIER_DES_CHARGES.md, if one applies.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

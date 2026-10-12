@@ -105,6 +105,10 @@ Les détails sont dans [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Le suivi d'avancement est tenu dans [CAHIER_DES_TACHES.md](CAHIER_DES_TACHES.md), section « Tableau de bord ».
 
-## Licence envisagée
+## Contribuer
 
-Apache 2.0 (voir [ADR-001](DECISIONS.md#adr-001--licence-apache-20)).
+Voir [CONTRIBUTING.md](CONTRIBUTING.md) (certificat d'origine, tests, vérifications) et le [code de conduite](CODE_OF_CONDUCT.md). Les vulnérabilités se signalent en privé : [SECURITY.md](SECURITY.md).
+
+## Licence
+
+[Apache 2.0](LICENSE) (voir [ADR-001](DECISIONS.md#adr-001--licence-apache-20)).
