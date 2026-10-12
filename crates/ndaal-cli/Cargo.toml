@@ -1,0 +1,16 @@
+[package]
+name = "ndaal-cli"
+description = "The ndaal binary: server, client, administration, backup, benchmarks"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "ndaal"
+path = "src/main.rs"
+
+[lints]
+workspace = true

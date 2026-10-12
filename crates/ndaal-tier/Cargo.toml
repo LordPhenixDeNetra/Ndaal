@@ -1,0 +1,12 @@
+[package]
+name = "ndaal-tier"
+description = "Hybrid cache, temperature tracking, object storage as foundation"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,29 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "xtask"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.99"
+license = "Apache-2.0"
+repository = "https://github.com/LordPhenixDeNetra/Ndaal"
+publish = false
+
+[workspace.dependencies]
+# Centralized dependency versions (T01.01); empty until a crate needs one.
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+too_many_lines = "warn"
+too_many_arguments = "warn"
+cognitive_complexity = "warn"
+unwrap_used = "warn"
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+print_stdout = "warn"
+print_stderr = "warn"

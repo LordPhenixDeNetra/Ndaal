@@ -1,0 +1,12 @@
+[package]
+name = "ndaal-vector"
+description = "HNSW, quantization, segments, filters, payload indexes, disk index"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

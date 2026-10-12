@@ -1,0 +1,12 @@
+[package]
+name = "ndaal-runtime"
+description = "Thread-per-core runtime: shards, cross-core messaging, pools, admission"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
