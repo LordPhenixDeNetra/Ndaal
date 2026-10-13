@@ -1,0 +1,30 @@
+# A single ndaal node with a persistent volume (EF-OPS-12, EXPLOITATION.md
+# section 1.3). From the repository root:
+#   docker compose -f deploy/docker/compose.yaml up -d --wait
+# Own configuration file: mount it on /etc/ndaal/ndaal.toml (NDAAL_CONFIG
+# names it for the server and the health probe); it replaces the image's
+# deploy/docker/ndaal.toml, so keep data_dir and listen from it. NDAAL_*
+# variables below still take precedence over the file.
+
+name: ndaal
+
+services:
+  ndaal:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    image: ndaal:local
+    read_only: true
+    environment:
+      # ENF-SEC-04: in the container the node listens on 0.0.0.0, which needs
+      # this explicit opt-in until authentication exists (J11). The port is
+      # published on the host loopback only.
+      NDAAL_AUTH__ALLOW_INSECURE: "true"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ndaal-data:/data
+    stop_grace_period: 10s
+
+volumes:
+  ndaal-data:

@@ -1,0 +1,12 @@
+# Configuration of the container image (/etc/ndaal/ndaal.toml, read through
+# NDAAL_CONFIG by `ndaal server` and by the `ndaal health` probe).
+# To configure the node with your own file, mount it on /etc/ndaal/ndaal.toml:
+# it replaces this one, so keep these two values in it.
+
+[node]
+data_dir = "/data"
+
+[http]
+# Every interface: the container's port is published by Docker. Without
+# authentication this needs auth.allow_insecure = true (ENF-SEC-04).
+listen = "0.0.0.0:8080"

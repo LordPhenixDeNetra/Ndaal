@@ -1,0 +1,7 @@
+# Build context of deploy/docker/Dockerfile: sources only.
+.git
+.superpowers
+/target
+console/node_modules
+docs
+CLAUDE.local.md
