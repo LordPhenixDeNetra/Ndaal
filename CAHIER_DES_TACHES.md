@@ -73,7 +73,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
-| J01 | Fondations du projet | 25 | 17 | 68 % | ~67 | En cours |
+| J01 | Fondations du projet | 25 | 20 | 80 % | ~67 | En cours |
 | J02 | Noyau de stockage | 26 | 0 | 0 % | ~106 | À faire |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **299** | **17** | **6 %** | **~1319** | |
+| **Total** | | **299** | **20** | **7 %** | **~1319** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -169,7 +169,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T01.05** — `ndaal-common` : identifiants (§10 des formats), types d'erreurs, utilitaires d'octets, `varint`
   - Estimation : S · Dépend de : T01.01 · Exigences : —
   - Fin : tests de propriétés aller-retour sur tous les encodages.
-- [ ] **T01.06** — `ndaal-common` : configuration (TOML, variables d'environnement, ligne de commande) avec priorités, validation et génération de la référence
+- [x] **T01.06** — `ndaal-common` : configuration (TOML, variables d'environnement, ligne de commande) avec priorités, validation et génération de la référence
   - Estimation : M · Dépend de : T01.05 · Exigences : EF-GEN-04, EF-GEN-05
   - Fin : test de priorité des trois sources ; `ndaal config reference` produit la liste des paramètres avec types et défauts.
 - [x] **T01.07** — `ndaal-io` : traits `Clock`, `Rng`, `Disk`/`File`, `Network` et implémentations réelles
@@ -187,7 +187,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T01.11** — `ndaal-observe` : métriques locales par cœur et exportateur Prometheus *(exposition HTTP `/metrics` reportée au frontal HTTP : P-27)*
   - Estimation : M · Dépend de : T01.10 · Exigences : EF-OPS-01
   - Fin : `/metrics` expose des compteurs et histogrammes agrégés depuis plusieurs threads, sans verrou sur le chemin d'incrémentation.
-- [ ] **T01.12** — `ndaal-cli` : binaire `ndaal` (clap) avec sous-commandes `server`, `admin`, `backup`, `restore`, `bench`, `config`, `doctor`
+- [x] **T01.12** — `ndaal-cli` : binaire `ndaal` (clap) avec sous-commandes `server`, `admin`, `backup`, `restore`, `bench`, `config`, `doctor`
   - Estimation : S · Dépend de : T01.06 · Exigences : EF-GEN-07
   - Fin : `ndaal --help` liste les sous-commandes.
 - [x] **T01.13** — Mesure de couverture et rapport en CI
@@ -220,7 +220,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T01.22** — Dockerfile en plusieurs étapes et `deploy/docker/compose.yaml` (nœud unique) ; construction et démarrage vérifiés en CI
   - Estimation : S · Dépend de : T01.12 · Exigences : EF-OPS-07, EF-OPS-12
   - Fin : `docker compose up` démarre un nœud dont `/health/ready` répond, sous Linux, macOS et Windows.
-- [ ] **T01.23** — `ndaal-i18n` : chargement Fluent, choix de la langue (ENF-I18N-03), repli sur l'anglais, vérification de complétude en CI ; messages existants de la CLI en anglais et en français
+- [x] **T01.23** — `ndaal-i18n` : chargement Fluent, choix de la langue (ENF-I18N-03), repli sur l'anglais, vérification de complétude en CI ; messages existants de la CLI en anglais et en français
   - Estimation : M · Dépend de : T01.12 · Exigences : ENF-I18N-01 à 05, ADR-029
   - Fin : `ndaal --lang fr --help` s'affiche en français ; une clé manquante en français retombe sur l'anglais ; la CI échoue si une clé manque.
 - [x] **T01.24** — Conventions d'erreurs : profil `panic = "abort"`, gestionnaire de panique (journal, métrique, vidage), identifiant de requête propagé, guide des erreurs dans `ndaal-common`
