@@ -5,3 +5,4 @@
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
 cc d62545910033edbb5bf4be604cbd0e2d9b88992c206a98188abf637008faddba # shrinks to seed = 0, ops = [Write { file: 0, offset: 0, data: [0] }]
+cc 15d286216aeb14a5e64fa24426770615aabd882077271a46b152fc618e944530 # shrinks to seed = 0, ops = [Create(0, 2), Remove(0, 2), SyncDir(0)]

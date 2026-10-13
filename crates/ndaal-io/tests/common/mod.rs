@@ -1,6 +1,8 @@
-//! Behavior every `Disk` implementation must share (real and simulated).
+//! Behavior every `Disk` and `Network` implementation must share (real and simulated).
 
 #![allow(dead_code)] // each test binary uses a subset
+
+pub mod net;
 
 use std::io::ErrorKind;
 use std::path::Path;
@@ -21,6 +23,9 @@ pub async fn disk_contract<D: Disk>(disk: &D, root: &Path) {
     rename_remove_and_sorted_listing(disk, root).await;
     set_len_truncates_and_extends(disk, root).await;
     truncate_on_open(disk, root).await;
+    rename_over_existing_target(disk, root).await;
+    missing_files_are_not_found(disk, root).await;
+    removed_open_file_stays_readable(disk, root).await;
 }
 
 async fn write_then_read<D: Disk>(disk: &D, root: &Path) {
@@ -109,4 +114,56 @@ async fn truncate_on_open<D: Disk>(disk: &D, root: &Path) {
     };
     let file = disk.open(&path, opts).await.expect("reopen");
     assert_eq!(file.len().await.expect("len"), 0);
+}
+
+async fn rename_over_existing_target<D: Disk>(disk: &D, root: &Path) {
+    let (from, to) = (root.join("ren-from"), root.join("ren-to"));
+    disk.open(&from, CREATE)
+        .await
+        .expect("create")
+        .write_all_at(b"new", 0)
+        .await
+        .expect("write");
+    disk.open(&to, CREATE)
+        .await
+        .expect("create")
+        .write_all_at(b"old", 0)
+        .await
+        .expect("write");
+    disk.rename(&from, &to).await.expect("rename over target");
+    let file = disk
+        .open(&to, OpenOptions::default())
+        .await
+        .expect("open target");
+    let mut buf = [0u8; 3];
+    file.read_at(&mut buf, 0).await.expect("read");
+    assert_eq!(&buf, b"new");
+    let gone = disk.open(&from, OpenOptions::default()).await;
+    assert_eq!(gone.err().map(|e| e.kind()), Some(ErrorKind::NotFound));
+}
+
+async fn missing_files_are_not_found<D: Disk>(disk: &D, root: &Path) {
+    let missing = root.join("nothing-here");
+    let removed = disk.remove(&missing).await;
+    assert_eq!(removed.err().map(|e| e.kind()), Some(ErrorKind::NotFound));
+    let renamed = disk.rename(&missing, &root.join("elsewhere")).await;
+    assert_eq!(renamed.err().map(|e| e.kind()), Some(ErrorKind::NotFound));
+}
+
+async fn removed_open_file_stays_readable<D: Disk>(disk: &D, root: &Path) {
+    let dir = root.join("rm-open");
+    disk.create_dir_all(&dir).await.expect("mkdir");
+    let path = dir.join("f");
+    let file = disk.open(&path, CREATE).await.expect("create");
+    file.write_all_at(b"still here", 0).await.expect("write");
+    disk.remove(&path).await.expect("remove while open");
+    assert!(disk.list_dir(&dir).await.expect("list").is_empty());
+    let reopen = disk.open(&path, OpenOptions::default()).await;
+    assert_eq!(reopen.err().map(|e| e.kind()), Some(ErrorKind::NotFound));
+    let mut buf = [0u8; 10];
+    assert_eq!(
+        file.read_at(&mut buf, 0).await.expect("read open handle"),
+        10
+    );
+    assert_eq!(&buf, b"still here");
 }
