@@ -40,6 +40,10 @@ pub fn check_file(path: &str, bytes: &[u8]) -> Vec<Violation> {
             "add a final newline",
         ));
     }
+    if ext == "rs" {
+        found.extend(super::rust::lint_bypass(path, text));
+    }
+    found.extend(super::rust::config_bypass(path, text));
     if let Some(limit) = rust_line_limit(path, ext) {
         let count = text.lines().count();
         if count > limit {

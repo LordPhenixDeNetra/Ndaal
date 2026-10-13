@@ -10,6 +10,9 @@
 // Thread-per-core (ADR-003): futures stay on their core, so the traits
 // deliberately do not require `Send` futures.
 #![allow(async_fn_in_trait)]
+// This crate is the one place that reaches the clock, the disk, the network
+// and randomness (ADR-017); the rest of the workspace is linted against it.
+#![allow(clippy::disallowed_methods, clippy::disallowed_types)]
 
 mod clock;
 mod disk;

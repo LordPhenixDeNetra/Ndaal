@@ -5,6 +5,8 @@
 #![forbid(unsafe_code)]
 // Command-line tool: printing is its output.
 #![allow(clippy::print_stdout, clippy::print_stderr)]
+// Development tool, not part of the engine: reads the repository directly.
+#![allow(clippy::disallowed_methods, clippy::disallowed_types)]
 
 mod hygiene;
 
