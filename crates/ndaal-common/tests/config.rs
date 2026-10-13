@@ -22,7 +22,55 @@ fn load(
         file,
         env: pairs(env),
         overrides: pairs(cli),
+        ..Sources::default()
     })
+}
+
+#[test]
+fn public_listen_requires_allow_insecure() {
+    for addr in ["0.0.0.0:8080", "[::]:8080", "192.0.2.1:8080"] {
+        match load(None, &[], &[("http.listen", addr)]) {
+            Err(ConfigError::PublicWithoutAuth { key, origin }) => {
+                assert_eq!((key.as_str(), origin), ("http.listen", Origin::CommandLine));
+            }
+            other => panic!("{addr}: {other:?}"),
+        }
+    }
+    for addr in ["127.0.0.2:8080", "[::1]:8080"] {
+        load(None, &[], &[("http.listen", addr)]).expect(addr);
+    }
+    let file = "[http]\nlisten = \"0.0.0.0:8080\"\n[auth]\nallow_insecure = true\n";
+    let c = load(Some(file), &[], &[]).expect("explicitly allowed");
+    assert!(c.auth.allow_insecure);
+}
+
+#[test]
+fn bool_values() {
+    let error = load(None, &[("NDAAL_AUTH__ALLOW_INSECURE", "yes")], &[]).expect_err("yes");
+    assert_eq!(
+        error,
+        ConfigError::Invalid {
+            key: "auth.allow_insecure".into(),
+            origin: Origin::Env,
+            expected: Expected::Value(Kind::Bool),
+        }
+    );
+    assert!(!load(None, &[], &[]).expect("defaults").auth.allow_insecure);
+}
+
+#[test]
+fn platform_defaults_sit_between_params_and_file() {
+    let with = |file: Option<&str>| {
+        config::load(&Sources {
+            file,
+            defaults: pairs(&[("node.data_dir", "/platform")]),
+            ..Sources::default()
+        })
+        .expect("valid")
+    };
+    assert_eq!(with(None).node.data_dir, PathBuf::from("/platform"));
+    let file = "[node]\ndata_dir = \"/file\"\n";
+    assert_eq!(with(Some(file)).node.data_dir, PathBuf::from("/file"));
 }
 
 #[test]

@@ -33,6 +33,14 @@ cli-error-unknown-option = Unknown option: { $name }
 cli-error-invalid-value = Missing or invalid value for { $name }
 cli-error-usage = Invalid command line
 cli-error-hint = Run ndaal --help for the commands and options.
+cli-cmd-health = Check that a node is ready (for container health checks)
+cli-data-dir-error = Cannot create the data directory { $path }: { $error }
+cli-listen-error = Cannot listen on { $addr }: { $error }
+cli-health-not-ready = The node at { $addr } is not ready: { $reason }
+cli-health-unreachable = cannot connect ({ $error })
+cli-health-timeout = no answer within 5 seconds
+cli-health-status = HTTP status { $status }
+cli-health-invalid = the answer is not HTTP
 cli-not-available = The command { $command } is not available yet.
 cli-set-syntax = Invalid value for --set: { $value } (expected section.key=value).
 cli-config-read-error = Cannot read the configuration file { $path }: { $error }
@@ -50,6 +58,8 @@ cli-expected-text = text
 cli-expected-choice = one of { $choices }
 cli-expected-addr = an address such as 127.0.0.1:8080
 cli-expected-log-level = a level ({ $levels }) or a list of target=level
+cli-expected-bool = true or false
+cli-config-public-without-auth = { $key } (source: { $origin }) listens on a non-local address without authentication. Set auth.allow_insecure = true only if this is intended.
 cli-expected-table = a [section] table
 cli-expected-scalar = a single value, not a list or a table
 cli-runtime-error = Cannot start: { $error }

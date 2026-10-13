@@ -128,6 +128,7 @@ pub(crate) fn command(t: &Translator) -> Command {
         .subcommand(sub(t, "bench", "cli-cmd-bench"))
         .subcommand(config)
         .subcommand(sub(t, "doctor", "cli-cmd-doctor"))
+        .subcommand(sub(t, "health", "cli-cmd-health"))
 }
 
 /// A `clap` parse error in the language of `t`: `clap` writes its own
