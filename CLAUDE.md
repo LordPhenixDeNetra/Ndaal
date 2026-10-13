@@ -213,15 +213,20 @@ Les mises à jour proposées par Dependabot sont relues comme du code : notes de
 ## 11. Avant de déclarer une tâche terminée
 
 ```bash
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo nextest run
-cargo deny check
-./scripts/check-hygiene.sh   # taille des fichiers, emojis, caractères non ASCII, fins de ligne
-./scripts/check-linux.sh     # clippy et tests compilés pour Linux, depuis macOS ou Windows
+./scripts/install-tools.sh                   # outils aux versions figées (une fois)
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo nextest run --workspace
+./scripts/check-deny.sh                      # licences, avis de sécurité, sources
+./scripts/check-hygiene.sh                   # taille des fichiers, emojis, non ASCII, fins de ligne
+./scripts/check-linux.sh                     # clippy et tests compilés pour Linux (macOS, Windows)
+./scripts/check-dco.sh origin/main HEAD      # chaque commit signé (git commit -s)
+./scripts/check-workflows.sh                 # si .github/workflows/ a changé
 ```
 
-**Sous Windows ou macOS, `check-linux.sh` est obligatoire.** Le code propre à Linux (`io_uring`, `O_DIRECT`, épinglage des threads) est derrière `#[cfg(target_os = "linux")]` : un `cargo clippy` local ne le compile même pas, et ses erreurs n'apparaîtraient qu'en CI. Le script lance `clippy` et `nextest` dans le conteneur Rust de la version figée (Docker) ; sous Windows, WSL2 convient aussi.
+**Sous Windows ou macOS, `check-linux.sh` est obligatoire.** Le code propre à Linux (`io_uring`, `O_DIRECT`, épinglage des threads) est derrière `#[cfg(target_os = "linux")]` : un `cargo clippy` local ne le compile même pas, et ses erreurs n'apparaîtraient qu'en CI. Le script lance `clippy` et `cargo test` dans le conteneur Rust de la version figée (Docker) ; sous Windows, WSL2 convient aussi.
+
+La CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) fait foi (§10) : clippy, tests et hygiène sur Linux x86_64 et arm64, macOS et Windows ; formatage et `cargo deny` sur Linux x86_64 ; signature DCO et couverture sur chaque demande de fusion. `check-linux.sh` et `check-workflows.sh` restent des vérifications locales.
 
 Pour la console : `npm run check`, `npm run lint`, `npm test` et `npx playwright test` dans `console/`.
 
