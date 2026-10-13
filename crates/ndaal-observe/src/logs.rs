@@ -30,8 +30,6 @@ pub enum LogError {
     Reload(String),
 }
 
-const LEVELS: [&str; 6] = ["trace", "debug", "info", "warn", "error", "off"];
-
 /// Changes the level of a running subscriber.
 pub struct LogHandle {
     reload: reload::Handle<EnvFilter, Registry>,
@@ -62,15 +60,8 @@ impl LogHandle {
 /// would read a mistyped level such as `verbose` as a target name and accept it.
 fn parse(directive: &str) -> Result<EnvFilter, LogError> {
     let invalid = || LogError::InvalidLevel(directive.to_owned());
-    let is_level = |s: &str| LEVELS.contains(&s.to_ascii_lowercase().as_str());
-    for part in directive.split(',') {
-        let valid = match part.split_once('=') {
-            Some((target, level)) => !target.is_empty() && is_level(level),
-            None => is_level(part),
-        };
-        if !valid {
-            return Err(invalid());
-        }
+    if !ndaal_common::config::is_log_directive(directive) {
+        return Err(invalid());
     }
     EnvFilter::try_new(directive.to_ascii_lowercase()).map_err(|_| invalid())
 }

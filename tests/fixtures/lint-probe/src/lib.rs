@@ -114,6 +114,13 @@ fn unix_types(
 ) {
 }
 
+fn hash_types(
+    _: Option<std::collections::HashMap<u8, u8>>,
+    _: Option<std::collections::HashSet<u8>>,
+    _: Option<std::hash::RandomState>,
+) {
+}
+
 fn randomness(buf: &mut [u8], uninit: &mut [std::mem::MaybeUninit<u8>]) {
     getrandom::fill(buf);
     getrandom::fill_uninit(uninit);

@@ -86,6 +86,10 @@ disallowed-methods = [
     { path = "rand::fill", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
 ]
 disallowed-types = [
+    # Randomness: std hash maps seed their hasher from the OS (P-31)
+    { path = "std::collections::HashMap", reason = "ADR-017: use BTreeMap or ndaal_common::collections::DetMap" },
+    { path = "std::collections::HashSet", reason = "ADR-017: use BTreeSet or ndaal_common::collections::DetSet" },
+    { path = "std::hash::RandomState", reason = "ADR-017: seeded by the OS; use ndaal_io::Rng" },
     # Disk
     { path = "std::fs::File", reason = "ADR-017: use ndaal_io::Disk" },
     { path = "std::fs::OpenOptions", reason = "ADR-017: use ndaal_io::Disk" },
