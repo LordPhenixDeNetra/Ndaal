@@ -1,0 +1,5 @@
+# cargo-nextest settings (P-36): a test that hangs (a child process waiting
+# forever, a lost wake-up) fails instead of blocking CI: reported as slow
+# after 30 s, killed after 4 periods (120 s).
+[profile.default]
+slow-timeout = { period = "30s", terminate-after = 4 }

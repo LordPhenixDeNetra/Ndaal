@@ -50,9 +50,12 @@ const SIDE_EFFECT_LINTS: [&str; 4] = [
 /// Places allowed to silence them: the I/O layer itself, and development tools.
 const LINT_BYPASS_ALLOWED: [&str; 2] = ["crates/ndaal-io/", "xtask/"];
 
-/// Single files allowed to silence them: the deterministic hash map aliases
-/// (P-31) name `std::collections::HashMap` with a fixed hasher.
-const LINT_BYPASS_FILES: [&str; 1] = ["crates/ndaal-common/src/collections.rs"];
+/// Single files allowed to silence one of them: the deterministic hash map
+/// aliases (P-31) name `std::collections::HashMap` with a fixed hasher.
+const LINT_BYPASS_FILES: [(&str, &str); 1] = [(
+    "crates/ndaal-common/src/collections.rs",
+    "clippy::disallowed_types",
+)];
 
 /// `lint` appears in `compact` as a whole path (`clippy::all` is not
 /// `clippy::allow_attributes`).
@@ -80,13 +83,17 @@ pub(super) fn lint_bypass(path: &str, contents: &str) -> Option<Violation> {
     if LINT_BYPASS_ALLOWED
         .iter()
         .any(|prefix| path.starts_with(prefix))
-        || LINT_BYPASS_FILES.contains(&path)
     {
         return None;
     }
+    let allowed = LINT_BYPASS_FILES
+        .iter()
+        .find(|(file, _)| *file == path)
+        .map(|(_, lint)| *lint);
     let compact: String = contents.chars().filter(|c| !c.is_whitespace()).collect();
     let lint = SIDE_EFFECT_LINTS
         .iter()
+        .filter(|lint| Some(**lint) != allowed)
         .find(|lint| mentions(&compact, lint))?;
     bypass(
         path,
@@ -198,7 +205,6 @@ mod lint_bypass_tests {
             "crates/ndaal-io/src/lib.rs",
             "crates/ndaal-io/tests/real_net.rs",
             "xtask/src/main.rs",
-            "crates/ndaal-common/src/collections.rs",
         ] {
             assert!(lint_bypass(path, ALLOW).is_none(), "{path}");
         }
@@ -207,6 +213,24 @@ mod lint_bypass_tests {
             "crates/ndaal-common/src/ids.rs",
         ] {
             assert!(lint_bypass(path, ALLOW).is_some(), "{path}");
+        }
+    }
+
+    #[test]
+    fn collections_may_only_allow_disallowed_types() {
+        let path = "crates/ndaal-common/src/collections.rs";
+        let types = "#![allow(clippy::disallowed_types, reason = \"fixed hasher\")]
+";
+        assert!(lint_bypass(path, types).is_none());
+        for other in [
+            ALLOW,
+            "#![allow(clippy::all)]
+",
+            "#[expect(clippy::style)]
+fn f() {}
+",
+        ] {
+            assert!(lint_bypass(path, other).is_some(), "{other}");
         }
     }
 
