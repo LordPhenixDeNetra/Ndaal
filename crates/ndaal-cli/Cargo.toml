@@ -12,5 +12,19 @@ publish.workspace = true
 name = "ndaal"
 path = "src/main.rs"
 
+[dependencies]
+clap = { workspace = true, features = ["help", "usage", "error-context", "string"] }
+ndaal-common.workspace = true
+ndaal-i18n.workspace = true
+ndaal-io.workspace = true
+ndaal-observe.workspace = true
+sys-locale.workspace = true
+tokio = { workspace = true, features = ["rt", "signal"] }
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["rt"] }
+
 [lints]
 workspace = true
