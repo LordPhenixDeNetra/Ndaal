@@ -13,6 +13,7 @@
 - [ ] `cargo nextest run --workspace`
 - [ ] `./scripts/check-deny.sh`
 - [ ] `./scripts/check-hygiene.sh`
+- [ ] `./scripts/check-lint.sh`
 - [ ] `./scripts/check-linux.sh` (required on macOS and Windows)
 - [ ] `./scripts/check-dco.sh origin/main HEAD`
 - [ ] `./scripts/check-workflows.sh` (if `.github/workflows/` changed)

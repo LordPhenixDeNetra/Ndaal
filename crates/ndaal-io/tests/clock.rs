@@ -1,5 +1,8 @@
 //! Clock::sleep: virtual timers (SimClock) and real time (SystemClock).
 
+// Measuring real sleep needs the real clock (ADR-017 allows it in ndaal-io).
+#![allow(clippy::disallowed_methods)]
+
 use std::future::Future;
 use std::pin::pin;
 use std::sync::{Arc, Mutex};

@@ -3,3 +3,108 @@ too-many-arguments-threshold = 7
 cognitive-complexity-threshold = 25
 allow-unwrap-in-tests = true
 allow-print-in-tests = true
+
+# ADR-017: only ndaal-io reaches the clock, the disk, the network and
+# randomness. Everything else goes through its traits, so the deterministic
+# simulator can replace them. ndaal-io (and xtask) opt out explicitly; the
+# hygiene check rejects an opt-out anywhere else.
+#
+# `allow-invalid` marks paths of crates that some workspace members do not
+# depend on. scripts/check-lint.sh proves that every entry still matches a
+# real item (tests/fixtures/lint-probe calls each one), so a typo cannot
+# silently disable an entry.
+disallowed-methods = [
+    # Clock
+    { path = "std::time::Instant::now", reason = "ADR-017: use ndaal_io::Clock" },
+    { path = "std::time::Instant::elapsed", reason = "ADR-017: use ndaal_io::Clock" },
+    { path = "std::time::SystemTime::now", reason = "ADR-017: use ndaal_io::Clock" },
+    { path = "std::time::SystemTime::elapsed", reason = "ADR-017: use ndaal_io::Clock" },
+    { path = "std::thread::sleep", reason = "ADR-017: use ndaal_io::Clock::sleep" },
+    { path = "std::sync::mpsc::Receiver::recv_timeout", reason = "ADR-017: real-clock wait" },
+    { path = "tokio::time::sleep", reason = "ADR-017: use ndaal_io::Clock::sleep", allow-invalid = true },
+    { path = "tokio::time::sleep_until", reason = "ADR-017: use ndaal_io::Clock::sleep", allow-invalid = true },
+    { path = "tokio::time::timeout", reason = "ADR-017: time out with ndaal_io::Clock", allow-invalid = true },
+    { path = "tokio::time::timeout_at", reason = "ADR-017: time out with ndaal_io::Clock", allow-invalid = true },
+    { path = "tokio::time::interval", reason = "ADR-017: use ndaal_io::Clock", allow-invalid = true },
+    { path = "tokio::time::interval_at", reason = "ADR-017: use ndaal_io::Clock", allow-invalid = true },
+    { path = "tokio::time::Instant::now", reason = "ADR-017: use ndaal_io::Clock", allow-invalid = true },
+    # Disk
+    { path = "std::fs::read", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::read_to_string", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::write", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::read_dir", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::create_dir", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::create_dir_all", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::remove_file", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::remove_dir", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::remove_dir_all", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::rename", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::copy", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::metadata", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::symlink_metadata", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::exists", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::canonicalize", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::read_link", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::hard_link", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::set_permissions", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::path::Path::exists", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::path::Path::try_exists", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::path::Path::is_file", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::path::Path::is_dir", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::path::Path::metadata", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::path::Path::symlink_metadata", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::path::Path::read_dir", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::path::Path::canonicalize", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::path::Path::read_link", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "tokio::fs::read", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::read_to_string", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::write", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::read_dir", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::create_dir", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::create_dir_all", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::remove_file", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::remove_dir", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::remove_dir_all", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::rename", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::copy", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::metadata", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    # Network
+    { path = "std::net::ToSocketAddrs::to_socket_addrs", reason = "ADR-017: DNS through ndaal_io::Network" },
+    { path = "tokio::net::lookup_host", reason = "ADR-017: DNS through ndaal_io::Network", allow-invalid = true },
+    # Randomness
+    { path = "getrandom::fill", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "getrandom::fill_uninit", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "getrandom::u32", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "getrandom::u64", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "rand::rng", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "rand::make_rng", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "rand::random", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "rand::random_iter", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "rand::random_range", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "rand::random_bool", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "rand::random_ratio", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+    { path = "rand::fill", reason = "ADR-017: use ndaal_io::Rng", allow-invalid = true },
+]
+disallowed-types = [
+    # Disk
+    { path = "std::fs::File", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::OpenOptions", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "std::fs::DirBuilder", reason = "ADR-017: use ndaal_io::Disk" },
+    { path = "tokio::fs::File", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    { path = "tokio::fs::OpenOptions", reason = "ADR-017: use ndaal_io::Disk", allow-invalid = true },
+    # Network
+    { path = "std::net::TcpStream", reason = "ADR-017: use ndaal_io::Network" },
+    { path = "std::net::TcpListener", reason = "ADR-017: use ndaal_io::Network" },
+    { path = "std::net::UdpSocket", reason = "ADR-017: use ndaal_io::Network" },
+    { path = "tokio::net::TcpStream", reason = "ADR-017: use ndaal_io::Network", allow-invalid = true },
+    { path = "tokio::net::TcpListener", reason = "ADR-017: use ndaal_io::Network", allow-invalid = true },
+    { path = "tokio::net::TcpSocket", reason = "ADR-017: use ndaal_io::Network", allow-invalid = true },
+    { path = "tokio::net::UdpSocket", reason = "ADR-017: use ndaal_io::Network", allow-invalid = true },
+    # Unix-only: allow-invalid also because they do not exist on Windows.
+    { path = "std::os::unix::net::UnixStream", reason = "ADR-017: use ndaal_io::Network", allow-invalid = true },
+    { path = "std::os::unix::net::UnixListener", reason = "ADR-017: use ndaal_io::Network", allow-invalid = true },
+    { path = "std::os::unix::net::UnixDatagram", reason = "ADR-017: use ndaal_io::Network", allow-invalid = true },
+    { path = "tokio::net::UnixStream", reason = "ADR-017: use ndaal_io::Network", allow-invalid = true },
+    { path = "tokio::net::UnixListener", reason = "ADR-017: use ndaal_io::Network", allow-invalid = true },
+    { path = "tokio::net::UnixDatagram", reason = "ADR-017: use ndaal_io::Network", allow-invalid = true },
+]

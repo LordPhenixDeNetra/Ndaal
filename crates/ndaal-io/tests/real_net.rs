@@ -1,5 +1,9 @@
 //! Real TCP network (T01.07).
 
+// Raw TCP peers stand in for hostile or broken remote nodes (ADR-017 allows
+// direct network access in ndaal-io).
+#![allow(clippy::disallowed_methods, clippy::disallowed_types)]
+
 mod common;
 
 use std::io::ErrorKind;

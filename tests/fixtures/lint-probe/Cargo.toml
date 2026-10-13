@@ -1,0 +1,15 @@
+[package]
+name = "lint-probe"
+description = "Fixture: one use of each item disallowed by clippy.toml (scripts/check-lint.sh)"
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+publish = false
+
+# Its own workspace: never built or tested with the real crates.
+[workspace]
+
+[dependencies]
+getrandom = "0.4.3"
+rand = "0.10.3"
+tokio = { version = "1.53.2", default-features = false, features = ["fs", "net", "time"] }

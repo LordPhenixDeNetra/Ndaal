@@ -39,7 +39,7 @@ Si le code doit s'écarter de la documentation, **mettre à jour la documentatio
 
 ### 3.2 Effets de bord
 
-- **Aucune crate ne lit l'horloge, le disque, le réseau ou l'aléa directement.** Tout passe par les traits de `ndaal-io` (ADR-016, ADR-017). Un lint maison l'impose en CI.
+- **Aucune crate ne lit l'horloge, le disque, le réseau ou l'aléa directement.** Tout passe par les traits de `ndaal-io` (ADR-016, ADR-017). Clippy l'impose en CI (`disallowed-methods` et `disallowed-types` dans `clippy.toml`, dont `check-lint.sh` prouve que chaque entrée est appliquée). Seuls `ndaal-io` et `xtask` lèvent l'interdiction ; `check-hygiene.sh` refuse les contournements connus ailleurs : `allow`/`expect` de ces lints ou de leurs groupes (`clippy::all`, `clippy::style`), second `clippy.toml`, crate sans `[lints] workspace = true`, configuration Cargo qui touche à clippy.
 - C'est ce qui rend la simulation déterministe possible : un code qui contourne `ndaal-io` est un code qu'on ne peut pas tester sous pannes.
 
 ### 3.3 Interfaces publiques
@@ -219,6 +219,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo nextest run --workspace
 ./scripts/check-deny.sh                      # licences, avis de sécurité, sources
 ./scripts/check-hygiene.sh                   # taille des fichiers, emojis, non ASCII, fins de ligne
+./scripts/check-lint.sh                      # chaque interdiction de clippy.toml est appliquée (ADR-017)
 ./scripts/check-linux.sh                     # clippy et tests compilés pour Linux (macOS, Windows)
 ./scripts/check-dco.sh origin/main HEAD      # chaque commit signé (git commit -s)
 ./scripts/check-workflows.sh                 # si .github/workflows/ a changé

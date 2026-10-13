@@ -41,6 +41,8 @@ pub enum Rule {
     FileTooLong,
     /// A crate root without `#![forbid(unsafe_code)]` outside the exempt crates.
     MissingForbidUnsafe,
+    /// The ADR-017 side-effect lint silenced outside `ndaal-io` and `xtask`.
+    ForbiddenLintBypass,
 }
 
 impl fmt::Display for Rule {
@@ -53,6 +55,7 @@ impl fmt::Display for Rule {
             Rule::MissingFinalNewline => "missing-final-newline",
             Rule::FileTooLong => "file-too-long",
             Rule::MissingForbidUnsafe => "missing-forbid-unsafe",
+            Rule::ForbiddenLintBypass => "forbidden-lint-bypass",
         };
         f.write_str(name)
     }

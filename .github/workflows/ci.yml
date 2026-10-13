@@ -40,6 +40,9 @@ jobs:
       - name: Hygiene
         shell: bash
         run: ./scripts/check-hygiene.sh
+      - name: Side-effect lint list (ADR-017)
+        shell: bash
+        run: ./scripts/check-lint.sh
       - name: Dependencies (cargo deny)
         shell: bash
         run: ./scripts/check-deny.sh
