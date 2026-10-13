@@ -38,7 +38,7 @@ impl Disk for RealDisk {
         let file = blocking(move || {
             std::fs::OpenOptions::new()
                 .read(true)
-                .write(true)
+                .write(!options.read_only)
                 .create(options.create)
                 .truncate(options.truncate)
                 .open(path)

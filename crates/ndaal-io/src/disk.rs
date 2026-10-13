@@ -7,13 +7,16 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
-/// How to open a file. Files are always opened for reading and writing.
+/// How to open a file: for reading and writing, or for reading only.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct OpenOptions {
     /// Create the file if it does not exist.
     pub create: bool,
     /// Truncate the file to zero length.
     pub truncate: bool,
+    /// Open for reading only: writes fail, and the file may be read-only on
+    /// disk (a configuration file). `create` and `truncate` are then invalid.
+    pub read_only: bool,
 }
 
 /// A file system.

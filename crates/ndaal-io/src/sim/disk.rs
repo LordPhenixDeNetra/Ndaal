@@ -45,6 +45,7 @@ pub struct SimFile {
     inode: u64,
     path: PathBuf,
     epoch: u64,
+    read_only: bool,
 }
 
 #[derive(Debug)]
@@ -201,6 +202,9 @@ impl Disk for SimDisk {
     type File = SimFile;
 
     async fn open(&self, path: &Path, options: OpenOptions) -> io::Result<SimFile> {
+        if options.read_only && (options.create || options.truncate) {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
         let mut st = self.state.borrow_mut();
         st.take_fault(path)?;
         let inode = match st.names.get(path) {
@@ -229,6 +233,7 @@ impl Disk for SimDisk {
             inode,
             path: path.to_owned(),
             epoch: st.epoch,
+            read_only: options.read_only,
         })
     }
 
@@ -300,6 +305,14 @@ impl SimFile {
         st.take_fault(&self.path)?;
         f(&mut st, self.inode)
     }
+
+    /// Like [`Self::with`], for operations that change the file.
+    fn with_write<T>(&self, f: impl FnOnce(&mut State, u64) -> io::Result<T>) -> io::Result<T> {
+        if self.read_only {
+            return Err(io::ErrorKind::PermissionDenied.into());
+        }
+        self.with(f)
+    }
 }
 
 fn inode(st: &mut State, inode: u64) -> io::Result<&mut Inode> {
@@ -320,7 +333,7 @@ impl File for SimFile {
     }
 
     async fn write_all_at(&self, buf: &[u8], offset: u64) -> io::Result<()> {
-        self.with(|st, ino| {
+        self.with_write(|st, ino| {
             let end = check_end(offset, buf.len())?;
             st.reserve(ino, end)?;
             let offset = end - buf.len();
@@ -358,7 +371,7 @@ impl File for SimFile {
     }
 
     async fn set_len(&self, len: u64) -> io::Result<()> {
-        self.with(|st, ino| {
+        self.with_write(|st, ino| {
             let len = check_end(len, 0)?;
             st.reserve(ino, len)?;
             let file = inode(st, ino)?;
