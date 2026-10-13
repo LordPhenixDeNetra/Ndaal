@@ -52,11 +52,20 @@ impl Lsn {
     pub const FIRST: Lsn = Lsn(1);
 
     /// The following LSN.
+    ///
+    /// # Panics
+    ///
+    /// On `Lsn(u64::MAX)`: unreachable by counting (2^64 writes), but reachable
+    /// from corrupted data. Code that got the LSN from disk or the network must
+    /// use [`Lsn::checked_next`].
     pub fn next(self) -> Lsn {
-        Lsn(self
-            .0
-            .checked_add(1)
-            .expect("LSN overflow: 2^64 writes on one partition"))
+        self.checked_next()
+            .expect("LSN overflow: 2^64 writes on one partition")
+    }
+
+    /// The following LSN, or `None` after `u64::MAX`.
+    pub fn checked_next(self) -> Option<Lsn> {
+        self.0.checked_add(1).map(Lsn)
     }
 }
 
@@ -243,6 +252,12 @@ mod tests {
             lsn: Lsn(l),
             counter: c,
         }
+    }
+
+    #[test]
+    fn lsn_checked_next() {
+        assert_eq!(Lsn(1).checked_next(), Some(Lsn(2)));
+        assert_eq!(Lsn(u64::MAX).checked_next(), None);
     }
 
     #[test]
