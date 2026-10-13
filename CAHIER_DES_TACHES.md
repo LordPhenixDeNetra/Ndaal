@@ -73,7 +73,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
-| J01 | Fondations du projet | 25 | 8 | 32 % | ~67 | En cours |
+| J01 | Fondations du projet | 25 | 9 | 36 % | ~67 | En cours |
 | J02 | Noyau de stockage | 26 | 0 | 0 % | ~106 | À faire |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **299** | **8** | **3 %** | **~1319** | |
+| **Total** | | **299** | **9** | **3 %** | **~1319** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -208,7 +208,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T01.18** — Banc d'essai comparatif `bench/compare/` : lancement tour à tour de Ndaal et d'une référence en conteneur (Valkey, Qdrant, MinIO/RustFS), confinement CPU identique, consignation des versions et configurations, comparaison automatique à la tolérance ENF-COMP, exécution nocturne
   - Estimation : M · Dépend de : T01.15 · Exigences : ENF-COMP, O7, ADR-027
   - Fin : un banc d'exemple compare Valkey à lui-même et produit un rapport ; un écart simulé au-delà de la tolérance ouvre un ticket.
-- [ ] **T01.19** — Hygiène du code en CI : `rustfmt.toml` (`max_width = 100`), `clippy.toml` (seuils de taille), `.gitattributes` (LF), script `scripts/check-hygiene.sh` (taille des fichiers, emojis, caractères non ASCII, espaces de fin, fins de ligne) *(en cours, reste : preuve de rejet sur une demande de fusion d'essai)*
+- [x] **T01.19** — Hygiène du code en CI : `rustfmt.toml` (`max_width = 100`), `clippy.toml` (seuils de taille), `.gitattributes` (LF), script `scripts/check-hygiene.sh` (taille des fichiers, emojis, caractères non ASCII, espaces de fin, fins de ligne)
   - Estimation : S · Dépend de : T01.03 · Exigences : ENF-QUAL-02, CLAUDE.md §4.6 et §4.7
   - Fin : la CI rejette une demande de fusion d'essai contenant un emoji, un fichier `.rs` de plus de 800 lignes et une fonction de plus de 100 lignes ; les exceptions déclarées (code généré, `#[allow]` justifié) passent.
 - [x] **T01.20** — Workflows GitHub Actions `ci.yml`, `nightly.yml`, `docs.yml` : permissions minimales, actions épinglées par empreinte, cache de compilation, `concurrency`, Dependabot (Cargo et actions), protection de `main` *(Dependabot a tourné avec succès pour Cargo et les actions le 2026-10-13 sans rien à proposer : aucune dépendance, actions déjà à jour)*
