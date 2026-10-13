@@ -116,3 +116,33 @@ jobs:
         with:
           name: coverage-lcov
           path: lcov.info
+
+  docker:
+    name: docker
+    # T01.22: the image builds, the node becomes healthy and stops on SIGTERM.
+    # GitHub runs Linux containers on Linux only: macOS and Windows are
+    # checked locally with Docker Desktop.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      COMPOSE: docker compose -f deploy/docker/compose.yaml
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build and start a node (waits for the HEALTHCHECK)
+        run: $COMPOSE up --detach --build --wait --wait-timeout 180
+      - name: Readiness from the host
+        run: curl --fail --silent --show-error http://127.0.0.1:8080/health/ready
+      - name: Graceful stop on SIGTERM (exit code 0, not killed)
+        shell: bash
+        run: |
+          container="$($COMPOSE ps --all --quiet ndaal)"
+          $COMPOSE stop --timeout 5
+          code="$(docker inspect --format '{{.State.ExitCode}}' "$container")"
+          echo "exit code: $code"
+          test "$code" = 0
+      - name: Logs
+        if: failure()
+        run: $COMPOSE logs
+      - name: Clean up
+        if: always()
+        run: $COMPOSE down --volumes
