@@ -1,0 +1,115 @@
+# Continuous integration (STRATEGIE_DE_TESTS.md section 13.1, ADR-028).
+# Every check is a repository script or cargo command, so it can be run locally.
+
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          # Tools are cached in ~/.cargo/bin: a new pinned version needs a new key.
+          key: ${{ hashFiles('scripts/tools.versions') }}
+      - name: Install pinned tools
+        shell: bash
+        run: ./scripts/install-tools.sh cargo-deny
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Hygiene
+        shell: bash
+        run: ./scripts/check-hygiene.sh
+      - name: Dependencies (cargo deny)
+        shell: bash
+        run: ./scripts/check-deny.sh
+
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          # Tools are cached in ~/.cargo/bin: a new pinned version needs a new key.
+          key: ${{ hashFiles('scripts/tools.versions') }}
+      - name: Install pinned tools
+        shell: bash
+        run: ./scripts/install-tools.sh cargo-nextest
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Tests
+        run: cargo nextest run --workspace
+      - name: Hygiene (line endings and paths as checked out on this system)
+        shell: bash
+        run: ./scripts/check-hygiene.sh
+
+  dco:
+    name: dco
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Developer Certificate of Origin
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: ./scripts/check-dco.sh "$BASE_SHA" "$HEAD_SHA"
+
+  coverage:
+    name: coverage
+    # Also on main: its cache is the only one every pull request can restore.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          # Tools are cached in ~/.cargo/bin: a new pinned version needs a new key.
+          key: ${{ hashFiles('scripts/tools.versions') }}
+      - name: Install pinned tools
+        shell: bash
+        run: ./scripts/install-tools.sh cargo-nextest cargo-llvm-cov
+      - name: Coverage report
+        run: cargo llvm-cov nextest --workspace --lcov --output-path lcov.info
+      - name: Coverage summary
+        shell: bash
+        run: |
+          {
+            echo '```'
+            cargo llvm-cov report --summary-only
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-lcov
+          path: lcov.info
