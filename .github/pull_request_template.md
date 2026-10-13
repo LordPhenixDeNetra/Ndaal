@@ -10,10 +10,12 @@
 
 - [ ] `cargo fmt --all --check`
 - [ ] `cargo clippy --workspace --all-targets -- -D warnings`
-- [ ] `cargo test --workspace`
+- [ ] `cargo nextest run --workspace`
 - [ ] `./scripts/check-deny.sh`
 - [ ] `./scripts/check-hygiene.sh`
 - [ ] `./scripts/check-linux.sh` (required on macOS and Windows)
+- [ ] `./scripts/check-dco.sh origin/main HEAD`
+- [ ] `./scripts/check-workflows.sh` (if `.github/workflows/` changed)
 
 ## Checklist
 

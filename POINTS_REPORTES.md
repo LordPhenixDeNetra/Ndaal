@@ -13,6 +13,7 @@
 | D-05 | Machines dédiées aux bancs de performance (exécuteurs auto-hébergés, [ADR-028](DECISIONS.md#adr-028--cicd-sur-github-actions)) | Achat, location (serveurs dédiés) ou instances cloud réservées ; conformes à l'[environnement de référence](CAHIER_DES_CHARGES.md#7-environnement-de-référence), au moins deux machines (serveur et client) | Aucun | T01.18 | Ouvert |
 | D-06 | Certificats de signature des binaires macOS (compte développeur Apple) et Windows (certificat Authenticode) | Les acheter (coût annuel) ou publier sans signature native, avec Sigstore seulement (avertissements de sécurité chez l'utilisateur) | Aucun | T12.19 | Ouvert |
 | D-07 | Contact des signalements liés au code de conduite (`CODE_OF_CONDUCT.md`) | Adresse dédiée au projet (par exemple `conduct@` sur un domaine du projet), ou formulaire privé de sécurité de GitHub (détourné de son usage) | Formulaire privé de sécurité, titre commençant par « Code of conduct » | Arrivée du premier contributeur extérieur | Ouvert |
+| D-08 | Approbations exigées pour fusionner dans `main` | 0 (demande de fusion et CI verte obligatoires) ou 1 (GitHub interdit d'approuver sa propre demande : bloquant tant qu'il n'y a qu'un mainteneur) | 0 approbation | Arrivée d'un second mainteneur | Ouvert |
 
 ## Points reportés
 
@@ -26,3 +27,7 @@ Remarques de revue non traitées, limites acceptées provisoirement, améliorati
 | P-04 | 2026-10-12 | Revue finale J01 lot 1 | `check-linux.sh` monte les sources en écriture et sans `--locked` (fichier `Cargo.lock` possiblement modifié par root sur un hôte Linux) | Sans effet sous Windows et macOS | Avant le premier contributeur sous Linux | Ouvert |
 | P-05 | 2026-10-12 | Revue finale J01 lot 1 | `check-deny.sh` affiche un message trompeur si `cargo-deny` n'est pas installé | `install-tools.sh` l'installe ; message à clarifier | Avant T01.20 (CI) | Ouvert |
 | P-06 | 2026-10-12 | Revue finale J01 lot 1 | Fichier sans saut de ligne final signalé sans numéro de ligne | Le chemin suffit à le retrouver | Au besoin | Ouvert |
+| P-07 | 2026-10-13 | Revue finale J01 lot 2 | L'exception Dependabot de `check-dco.sh` repose sur le nom d'auteur, falsifiable ; vérifier plutôt l'auteur de la demande de fusion (`github.event.pull_request.user.login`) | Le DCO est un engagement, pas un contrôle d'accès ; la relecture reste le garde-fou | Arrivée de contributeurs extérieurs | Ouvert |
+| P-08 | 2026-10-13 | Revue finale J01 lot 2 | `cancel-in-progress` annule aussi les exécutions sur `main` lors de fusions rapprochées ; groupe de concurrence sans le nom du workflow | Un seul mainteneur, fusions espacées | Création de `nightly.yml` ou `docs.yml` | Ouvert |
+| P-09 | 2026-10-13 | Revue finale J01 lot 2 | `persist-credentials: false` absent des étapes `checkout` | Jeton en lecture seule : impact faible | Avant tout workflow avec droits d'écriture (`release.yml`) | Ouvert |
+| P-10 | 2026-10-13 | Revue finale J01 lot 2 | Le composant `llvm-tools-preview` est téléchargé par tous les travaux, alors que seul `coverage` l'utilise | Parité avec les postes locaux, coût de quelques dizaines de Mio | Si la durée de la CI devient un problème | Ouvert |

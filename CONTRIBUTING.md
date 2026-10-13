@@ -39,18 +39,7 @@ Un commit = une intention. Pas de commit qui mélange une correction et un refor
 
 ## Avant d'ouvrir une demande de fusion
 
-Lancez les vérifications de [CLAUDE.md §11](CLAUDE.md#11-avant-de-déclarer-une-tâche-terminée) :
-
-```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-./scripts/check-deny.sh
-./scripts/check-hygiene.sh
-./scripts/check-linux.sh   # obligatoire sous macOS et Windows
-```
-
-Les outils utilisés s'installent aux versions figées du projet avec `./scripts/install-tools.sh`.
+Lancez la liste de vérifications de [CLAUDE.md §11](CLAUDE.md#11-avant-de-déclarer-une-tâche-terminée), la seule tenue à jour : formatage, clippy, tests (`cargo nextest`), `cargo deny`, hygiène, vérification Linux (obligatoire sous macOS et Windows) et signature DCO. Les outils s'installent aux versions figées du projet avec `./scripts/install-tools.sh`. La CI relance tout cela sur chaque demande de fusion, sur Linux, macOS et Windows.
 
 Dans la description de la demande de fusion, indiquez ce que vous avez lancé et le résultat, y compris ce qui a échoué ou n'a pas pu être lancé.
 
