@@ -37,4 +37,8 @@ impl Clock for SystemClock {
             .unwrap_or_default();
         u64::try_from(since_epoch.as_micros()).unwrap_or(u64::MAX)
     }
+
+    async fn sleep(&self, duration: Duration) {
+        tokio::time::sleep(duration).await;
+    }
 }

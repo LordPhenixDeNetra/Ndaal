@@ -6,7 +6,9 @@
 
 mod clock;
 mod disk;
+mod net;
 mod ops;
 
 pub use clock::SimClock;
 pub use disk::{CrashMode, SimDisk, SimFile};
+pub use net::{SimHost, SimListener, SimNetwork, SimRx, SimTx};

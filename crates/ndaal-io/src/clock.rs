@@ -9,4 +9,7 @@ pub trait Clock {
 
     /// Wall-clock time, microseconds since the Unix epoch (FORMATS_DE_DONNEES.md section 1).
     fn unix_micros(&self) -> u64;
+
+    /// Completes once `duration` has elapsed on this clock.
+    async fn sleep(&self, duration: Duration);
 }
