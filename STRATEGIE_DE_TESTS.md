@@ -340,7 +340,7 @@ Décision : [ADR-028](DECISIONS.md#adr-028--cicd-sur-github-actions). Chaque wor
 
 | Workflow | Déclencheur | Contenu |
 |---|---|---|
-| `ci.yml` | Demande de fusion, poussée sur `main` | §13.1 ; matrice `ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`, `windows-latest` ; travail `console` (Node.js, Playwright) sur `ubuntu-latest` |
+| `ci.yml` | Demande de fusion, poussée sur `main` | §13.1 ; matrice `ubuntu-24.04`, `ubuntu-24.04-arm`, `macos-latest`, `windows-latest` ; travail `console` (Node.js, Playwright) sur `ubuntu-latest` |
 | `nightly.yml` | Planifié, chaque nuit | §13.2 (hors bancs) |
 | `bench.yml` | Planifié chaque nuit, et à la demande | Bancs de performance, d'isolation et comparatifs (§9, §10) sur exécuteurs auto-hébergés dédiés |
 | `fuzz.yml` | Planifié | Fuzzing nocturne, sauvegarde des corpus, ouverture de tickets |
