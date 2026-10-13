@@ -952,7 +952,7 @@ Protocole binaire léger entre nœuds ([ADR-014](DECISIONS.md)) : trames `longue
 
 | Signal | Implémentation | Contenu principal |
 |---|---|---|
-| **Métriques** | crate `metrics` + exportateur Prometheus sur `/metrics` | Latences (histogrammes HDR) par commande, par classe et par espace de noms (avec cardinalité bornée) ; débits ; files d'admission ; budgets mémoire ; occupation des niveaux ; taux de réussite des caches ; LSN appliqué/durable/répliqué ; retard des suiveurs ; compactages ; ramasse-miettes |
+| **Métriques** | registre propre à Ndaal (`ndaal-observe::metrics` : emplacements atomiques par thread, sans verrou, agrégés à la lecture) + rendu au format texte Prometheus, exposé sur `/metrics` par le frontal HTTP | Latences (histogrammes HDR) par commande, par classe et par espace de noms (avec cardinalité bornée) ; débits ; files d'admission ; budgets mémoire ; occupation des niveaux ; taux de réussite des caches ; LSN appliqué/durable/répliqué ; retard des suiveurs ; compactages ; ramasse-miettes |
 | **Traces** | `tracing` + `tracing-opentelemetry` (OTLP) | Une trace par requête échantillonnée, avec étapes : décodage, routage, file d'attente, exécution sur le shard, journal, réplication, réponse |
 | **Journaux** | `tracing-subscriber` (JSON ou texte) | Événements structurés ; niveau modifiable à chaud |
 | **Requêtes lentes** | Tampon circulaire par shard | `SLOWLOG GET` en RESP, `/admin/slowlog` en HTTP |
