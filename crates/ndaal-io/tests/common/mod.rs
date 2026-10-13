@@ -12,6 +12,7 @@ use ndaal_io::{Disk, File, OpenOptions};
 pub const CREATE: OpenOptions = OpenOptions {
     create: true,
     truncate: false,
+    read_only: false,
 };
 
 /// Runs every contract check under `root` (an empty, existing directory).
@@ -26,6 +27,7 @@ pub async fn disk_contract<D: Disk>(disk: &D, root: &Path) {
     rename_over_existing_target(disk, root).await;
     missing_files_are_not_found(disk, root).await;
     removed_open_file_stays_readable(disk, root).await;
+    read_only_files_refuse_writes(disk, root).await;
 }
 
 async fn write_then_read<D: Disk>(disk: &D, root: &Path) {
@@ -59,6 +61,36 @@ async fn sparse_write_leaves_zero_hole<D: Disk>(disk: &D, root: &Path) {
         4096
     );
     assert!(hole.iter().all(|&b| b == 0));
+}
+
+async fn read_only_files_refuse_writes<D: Disk>(disk: &D, root: &Path) {
+    let path = root.join("read-only");
+    let file = disk.open(&path, CREATE).await.expect("create");
+    file.write_all_at(b"abc", 0).await.expect("write");
+    let read_only = OpenOptions {
+        read_only: true,
+        ..OpenOptions::default()
+    };
+    let file = disk.open(&path, read_only).await.expect("open read-only");
+    let mut buf = [0u8; 3];
+    assert_eq!(file.read_at(&mut buf, 0).await.expect("read"), 3);
+    assert_eq!(&buf, b"abc");
+    assert!(file.write_all_at(b"x", 0).await.is_err());
+    assert!(file.set_len(0).await.is_err());
+    assert_eq!(file.len().await.expect("len"), 3);
+    for options in [
+        OpenOptions {
+            create: true,
+            ..read_only
+        },
+        OpenOptions {
+            truncate: true,
+            ..read_only
+        },
+    ] {
+        let err = disk.open(&root.join("read-only-new"), options).await.err();
+        assert_eq!(err.map(|e| e.kind()), Some(ErrorKind::InvalidInput));
+    }
 }
 
 async fn open_missing_without_create_is_not_found<D: Disk>(disk: &D, root: &Path) {
@@ -111,6 +143,7 @@ async fn truncate_on_open<D: Disk>(disk: &D, root: &Path) {
     let opts = OpenOptions {
         create: false,
         truncate: true,
+        read_only: false,
     };
     let file = disk.open(&path, opts).await.expect("reopen");
     assert_eq!(file.len().await.expect("len"), 0);
