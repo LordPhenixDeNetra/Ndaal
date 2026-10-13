@@ -452,8 +452,8 @@ Préfixe `/v1/admin` (permission `ADMIN`).
 
 | Méthode | Chemin | Action |
 |---|---|---|
-| `GET` | `/health/live`, `/health/ready` | Sondes (sans authentification) |
-| `GET` | `/metrics` | Métriques Prometheus (authentification configurable) |
+| `GET` | `/health/live`, `/health/ready` | Sondes (sans authentification) : `200` et `ok` ; `/health/ready` répond `503` tant que le nœud n'est pas prêt |
+| `GET` | `/metrics` | Métriques Prometheus, format texte 0.0.4 (authentification configurable) |
 | `GET` | `/admin/cluster` | État du cluster : nœuds, rôles, zones, version, drapeaux de fonctionnalités |
 | `POST` | `/admin/cluster/init` | Initialiser un cluster (premier nœud) |
 | `POST` | `/admin/nodes/{id}/drain` | Vider un nœud (déplacer ses réplicas et leaders) |
