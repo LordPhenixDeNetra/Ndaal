@@ -50,6 +50,10 @@ const SIDE_EFFECT_LINTS: [&str; 4] = [
 /// Places allowed to silence them: the I/O layer itself, and development tools.
 const LINT_BYPASS_ALLOWED: [&str; 2] = ["crates/ndaal-io/", "xtask/"];
 
+/// Single files allowed to silence them: the deterministic hash map aliases
+/// (P-31) name `std::collections::HashMap` with a fixed hasher.
+const LINT_BYPASS_FILES: [&str; 1] = ["crates/ndaal-common/src/collections.rs"];
+
 /// `lint` appears in `compact` as a whole path (`clippy::all` is not
 /// `clippy::allow_attributes`).
 fn mentions(compact: &str, lint: &str) -> bool {
@@ -76,6 +80,7 @@ pub(super) fn lint_bypass(path: &str, contents: &str) -> Option<Violation> {
     if LINT_BYPASS_ALLOWED
         .iter()
         .any(|prefix| path.starts_with(prefix))
+        || LINT_BYPASS_FILES.contains(&path)
     {
         return None;
     }
@@ -193,8 +198,15 @@ mod lint_bypass_tests {
             "crates/ndaal-io/src/lib.rs",
             "crates/ndaal-io/tests/real_net.rs",
             "xtask/src/main.rs",
+            "crates/ndaal-common/src/collections.rs",
         ] {
             assert!(lint_bypass(path, ALLOW).is_none(), "{path}");
+        }
+        for path in [
+            "crates/ndaal-common/src/collections.rs.bak",
+            "crates/ndaal-common/src/ids.rs",
+        ] {
+            assert!(lint_bypass(path, ALLOW).is_some(), "{path}");
         }
     }
 
