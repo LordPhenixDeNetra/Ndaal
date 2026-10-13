@@ -73,7 +73,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
-| J01 | Fondations du projet | 25 | 1 | 4 % | ~67 | En cours |
+| J01 | Fondations du projet | 25 | 8 | 32 % | ~67 | En cours |
 | J02 | Noyau de stockage | 26 | 0 | 0 % | ~106 | À faire |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **299** | **1** | **0 %** | **~1319** | |
+| **Total** | | **299** | **8** | **3 %** | **~1319** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -157,10 +157,10 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T01.01** — Créer le workspace Cargo et l'arborescence des crates ([ARCHITECTURE.md §3](ARCHITECTURE.md#3-organisation-du-code))
   - Estimation : S · Dépend de : — · Exigences : EF-GEN-01
   - Fin : `cargo build --workspace` compile toutes les crates (vides) ; versions des dépendances centralisées dans `[workspace.dependencies]`.
-- [ ] **T01.02** — Configurer `cargo deny` (licences autorisées, sources, avis de sécurité, doublons) *(en cours, reste : exécution en CI, lot 2)*
+- [x] **T01.02** — Configurer `cargo deny` (licences autorisées, sources, avis de sécurité, doublons)
   - Estimation : XS · Dépend de : T01.01 · Exigences : C-02, ENF-SEC-02
   - Fin : `cargo deny check` en CI, échoue sur une licence interdite (test avec une dépendance factice).
-- [ ] **T01.03** — Mettre en place la CI de base : `fmt`, `clippy -D warnings`, `nextest`, MSRV, matrice Linux x86_64/aarch64, macOS, Windows
+- [x] **T01.03** — Mettre en place la CI de base : `fmt`, `clippy -D warnings`, `nextest`, MSRV, matrice Linux x86_64/aarch64, macOS, Windows
   - Estimation : M · Dépend de : T01.01 · Exigences : ENF-QUAL-02, ENF-PORT-01/02/04
   - Fin : chaque demande de fusion déclenche la CI ; temps < 15 min grâce au cache de compilation.
 - [ ] **T01.04** — Écrire le lint maison interdisant l'accès direct à l'horloge, au disque, au réseau et à l'aléa hors `ndaal-io`
@@ -190,7 +190,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T01.12** — `ndaal-cli` : binaire `ndaal` (clap) avec sous-commandes `server`, `admin`, `backup`, `restore`, `bench`, `config`, `doctor`
   - Estimation : S · Dépend de : T01.06 · Exigences : EF-GEN-07
   - Fin : `ndaal --help` liste les sous-commandes.
-- [ ] **T01.13** — Mesure de couverture et rapport en CI
+- [x] **T01.13** — Mesure de couverture et rapport en CI
   - Estimation : S · Dépend de : T01.03 · Exigences : ENF-QUAL-01
   - Fin : rapport publié sur chaque demande de fusion.
 - [ ] **T01.14** — Infrastructure de fuzzing (`cargo fuzz`, corpus versionnés, exécution nocturne)
@@ -199,7 +199,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T01.15** — Infrastructure de bancs (`criterion`, dossier `bench/`, stockage et graphe des résultats nocturnes)
   - Estimation : S · Dépend de : T01.03 · Exigences : ENF-PERF
   - Fin : un micro-banc d'exemple est tracé dans le temps.
-- [ ] **T01.16** — Fichiers du projet : `LICENSE` (Apache 2.0), `SECURITY.md`, `CONTRIBUTING.md` (DCO), code de conduite, modèles de tickets et de demandes de fusion *(en cours, reste : exécution en CI, lot 2)*
+- [x] **T01.16** — Fichiers du projet : `LICENSE` (Apache 2.0), `SECURITY.md`, `CONTRIBUTING.md` (DCO), code de conduite, modèles de tickets et de demandes de fusion
   - Estimation : XS · Dépend de : T01.01 · Exigences : ADR-001, ENF-SEC-05, ENF-QUAL-04
   - Fin : fichiers présents ; vérification DCO active en CI ; `CONTRIBUTING.md` impose un test de non-régression pour toute correction.
 - [ ] **T01.17** — Publier cette documentation dans `docs/` avec un site généré (mdBook)
@@ -208,13 +208,13 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T01.18** — Banc d'essai comparatif `bench/compare/` : lancement tour à tour de Ndaal et d'une référence en conteneur (Valkey, Qdrant, MinIO/RustFS), confinement CPU identique, consignation des versions et configurations, comparaison automatique à la tolérance ENF-COMP, exécution nocturne
   - Estimation : M · Dépend de : T01.15 · Exigences : ENF-COMP, O7, ADR-027
   - Fin : un banc d'exemple compare Valkey à lui-même et produit un rapport ; un écart simulé au-delà de la tolérance ouvre un ticket.
-- [ ] **T01.19** — Hygiène du code en CI : `rustfmt.toml` (`max_width = 100`), `clippy.toml` (seuils de taille), `.gitattributes` (LF), script `scripts/check-hygiene.sh` (taille des fichiers, emojis, caractères non ASCII, espaces de fin, fins de ligne) *(en cours, reste : exécution en CI, lot 2)*
+- [ ] **T01.19** — Hygiène du code en CI : `rustfmt.toml` (`max_width = 100`), `clippy.toml` (seuils de taille), `.gitattributes` (LF), script `scripts/check-hygiene.sh` (taille des fichiers, emojis, caractères non ASCII, espaces de fin, fins de ligne) *(en cours, reste : preuve de rejet sur une demande de fusion d'essai)*
   - Estimation : S · Dépend de : T01.03 · Exigences : ENF-QUAL-02, CLAUDE.md §4.6 et §4.7
   - Fin : la CI rejette une demande de fusion d'essai contenant un emoji, un fichier `.rs` de plus de 800 lignes et une fonction de plus de 100 lignes ; les exceptions déclarées (code généré, `#[allow]` justifié) passent.
-- [ ] **T01.20** — Workflows GitHub Actions `ci.yml`, `nightly.yml`, `docs.yml` : permissions minimales, actions épinglées par empreinte, cache de compilation, `concurrency`, Dependabot (Cargo et actions), protection de `main`
+- [x] **T01.20** — Workflows GitHub Actions `ci.yml`, `nightly.yml`, `docs.yml` : permissions minimales, actions épinglées par empreinte, cache de compilation, `concurrency`, Dependabot (Cargo et actions), protection de `main` *(Dependabot a tourné avec succès pour Cargo et les actions le 2026-10-13 sans rien à proposer : aucune dépendance, actions déjà à jour)*
   - Estimation : M · Dépend de : T01.03 · Exigences : ENF-QUAL-06, ENF-QUAL-07, ADR-028
   - Fin : une demande de fusion déclenche `ci.yml` sur les quatre exécuteurs ; `main` refuse une fusion sans CI verte ni relecture ; Dependabot ouvre ses premières demandes.
-- [ ] **T01.21** — Suite de tests complète sous macOS et Windows en CI (implémentations d'E/S de repli, chemins, fins de ligne)
+- [x] **T01.21** — Suite de tests complète sous macOS et Windows en CI (implémentations d'E/S de repli, chemins, fins de ligne)
   - Estimation : S · Dépend de : T01.20, T01.07 · Exigences : ENF-PORT-02
   - Fin : `cargo nextest run` vert sur `macos-latest` et `windows-latest`, sans test ignoré propre à un système.
 - [ ] **T01.22** — Dockerfile en plusieurs étapes et `deploy/docker/compose.yaml` (nœud unique) ; construction et démarrage vérifiés en CI
@@ -226,7 +226,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T01.24** — Conventions d'erreurs : profil `panic = "abort"`, gestionnaire de panique (journal, métrique, vidage), identifiant de requête propagé, guide des erreurs dans `ndaal-common`
   - Estimation : S · Dépend de : T01.05, T01.10 · Exigences : ADR-030, ENF-DUR-03
   - Fin : une panique provoquée en test d'intégration produit un journal avec pile d'appels et identifiant de requête, puis l'arrêt du processus.
-- [ ] **T01.25** — Versions figées des outils (`rust-toolchain.toml`, `scripts/tools.versions`, installation identique en local et en CI) et script `scripts/check-linux.sh` (clippy et tests compilés pour Linux dans le conteneur Rust figé, depuis macOS ou Windows) *(en cours, reste : mêmes versions en CI, lot 2)*
+- [x] **T01.25** — Versions figées des outils (`rust-toolchain.toml`, `scripts/tools.versions`, installation identique en local et en CI) et script `scripts/check-linux.sh` (clippy et tests compilés pour Linux dans le conteneur Rust figé, depuis macOS ou Windows)
   - Estimation : S · Dépend de : T01.03 · Exigences : CLAUDE.md §4.12 et §11, ENF-PORT-02
   - Fin : la CI et le poste de développement utilisent les mêmes versions ; sous Windows, `check-linux.sh` signale une erreur volontaire placée dans du code `#[cfg(target_os = "linux")]`.
 
