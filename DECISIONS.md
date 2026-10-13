@@ -609,3 +609,28 @@ Svelte est préféré à React pour la taille des fichiers produits et le nombre
 - Les traductions Fluent sont partagées entre la CLI et la console.
 - Tests de bout en bout dans un navigateur (Playwright, trois moteurs) et contrôles d'accessibilité (axe) en CI.
 - Toute nouvelle fonction de la console commence par un point d'accès public dans l'API : la console ne peut pas devenir une porte dérobée.
+
+---
+
+## ADR-032 — Frontal HTTP sur `axum`
+
+- **Statut** : Acceptée
+- **Date** : 2026-10-14
+- **Exigences liées** : EF-OPS-07, API_ET_PROTOCOLES §8, ADR-003, ADR-017, C-01
+
+### Contexte
+Le nœud doit exposer dès J01 ses sondes (`/health/live`, `/health/ready`) et ses métriques (`/metrics`) pour les conteneurs et la supervision (T01.22, P-27), puis toute l'API HTTP (vecteurs, transactions, administration, console). ARCHITECTURE §14.3 et ADR-003 citaient déjà `hyper` et `axum`, sans décision formelle.
+
+### Options étudiées
+1. **Serveur HTTP/1.1 écrit à la main** sur les flux de `ndaal-io` : aucune dépendance, mais l'analyse HTTP (en-têtes, corps en flux, connexions persistantes, HTTP/2) est un travail long et une surface d'attaque.
+2. **`hyper` seul** : la couche protocolaire éprouvée, mais le routage, l'extraction des paramètres et les réponses restent à écrire.
+3. **`axum`** (sur `hyper` et `tower`, projet `tokio`, licence MIT) : routage, extracteurs, réponses typées, arrêt propre ; fonctionne sur un runtime `current_thread` (ADR-003).
+
+### Décision
+Option 3. `axum` est utilisé sans ses fonctionnalités par défaut : `http1` et `tokio` seulement. HTTP/2, JSON (`serde_json`) et les couches `tower-http` seront ajoutés par les tâches qui en ont besoin. Le socket est ouvert par `ndaal-io` (`real::TcpByteListener`) et adapté au trait `axum::serve::Listener` dans `ndaal-proto-http` : aucune autre crate n'ouvre de socket (ADR-017).
+
+### Conséquences
+- Pur Rust (C-01) ; licences MIT, vérifiées par `cargo deny`.
+- Les flux d'octets n'existent encore qu'en version réelle : le frontal HTTP ne tourne pas dans le simulateur tant que le réseau simulé ne transporte que des trames (P-37).
+- `axum` exige des futures `Send` pour ses connexions : sans effet sur un runtime `current_thread`, mais les gestionnaires ne doivent pas garder de données non `Send` au travers d'un `await`.
+
