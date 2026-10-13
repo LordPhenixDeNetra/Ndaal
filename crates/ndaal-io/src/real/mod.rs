@@ -3,8 +3,10 @@
 
 mod clock;
 mod disk;
+mod net;
 mod rng;
 
 pub use clock::SystemClock;
 pub use disk::{RealDisk, RealFile};
+pub use net::{RealListener, RealNetwork, RealRx, RealTx};
 pub use rng::OsRng;

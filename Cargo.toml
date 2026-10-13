@@ -13,6 +13,7 @@ publish = false
 [workspace.dependencies]
 # Centralized dependency versions (T01.01). Exact versions are pinned by Cargo.lock.
 getrandom = "0.4.3"
+ndaal-io = { path = "crates/ndaal-io", version = "0.0.0" }
 proptest = "1.12.0"
 tempfile = "3.27.0"
 thiserror = "2.0.21"

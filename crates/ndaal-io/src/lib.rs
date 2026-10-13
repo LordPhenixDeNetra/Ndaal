@@ -13,10 +13,12 @@
 
 mod clock;
 mod disk;
+mod net;
 pub mod real;
 mod rng;
 pub mod sim;
 
 pub use clock::Clock;
 pub use disk::{Disk, File, OpenOptions};
+pub use net::{FrameRx, FrameTx, Listener, MAX_FRAME_LEN, Network};
 pub use rng::{Rng, Xoshiro256PlusPlus};
