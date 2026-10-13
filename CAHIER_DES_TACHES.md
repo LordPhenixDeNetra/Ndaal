@@ -73,7 +73,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
-| J01 | Fondations du projet | 25 | 9 | 36 % | ~67 | En cours |
+| J01 | Fondations du projet | 25 | 10 | 40 % | ~67 | En cours |
 | J02 | Noyau de stockage | 26 | 0 | 0 % | ~106 | À faire |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **299** | **9** | **3 %** | **~1319** | |
+| **Total** | | **299** | **10** | **3 %** | **~1319** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -166,16 +166,16 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T01.04** — Écrire le lint maison interdisant l'accès direct à l'horloge, au disque, au réseau et à l'aléa hors `ndaal-io`
   - Estimation : S · Dépend de : T01.03 · Exigences : ADR-017
   - Fin : un appel à `std::time::Instant::now` dans `ndaal-kv` fait échouer la CI.
-- [ ] **T01.05** — `ndaal-common` : identifiants (§10 des formats), types d'erreurs, utilitaires d'octets, `varint`
+- [x] **T01.05** — `ndaal-common` : identifiants (§10 des formats), types d'erreurs, utilitaires d'octets, `varint`
   - Estimation : S · Dépend de : T01.01 · Exigences : —
   - Fin : tests de propriétés aller-retour sur tous les encodages.
 - [ ] **T01.06** — `ndaal-common` : configuration (TOML, variables d'environnement, ligne de commande) avec priorités, validation et génération de la référence
   - Estimation : M · Dépend de : T01.05 · Exigences : EF-GEN-04, EF-GEN-05
   - Fin : test de priorité des trois sources ; `ndaal config reference` produit la liste des paramètres avec types et défauts.
-- [ ] **T01.07** — `ndaal-io` : traits `Clock`, `Rng`, `Disk`/`File`, `Network` et implémentations réelles
+- [ ] **T01.07** — `ndaal-io` : traits `Clock`, `Rng`, `Disk`/`File`, `Network` et implémentations réelles *(en cours, reste : `Network`, lot 4 avec T01.09)*
   - Estimation : M · Dépend de : T01.05 · Exigences : ADR-016, ADR-017
   - Fin : tests d'intégration des implémentations réelles (fichiers, `fdatasync`, TCP).
-- [ ] **T01.08** — `ndaal-io` : implémentations simulées (horloge virtuelle, disque en mémoire perdant les écritures non synchronisées et pouvant les déchirer, réseau avec latence/pertes/partitions)
+- [ ] **T01.08** — `ndaal-io` : implémentations simulées (horloge virtuelle, disque en mémoire perdant les écritures non synchronisées et pouvant les déchirer, réseau avec latence/pertes/partitions) *(en cours, reste : `Network`, lot 4 avec T01.09)*
   - Estimation : L · Dépend de : T01.07 · Exigences : ADR-017, ENF-QUAL-05
   - Fin : tests montrant qu'une coupure simulée perd exactement les écritures non synchronisées.
 - [ ] **T01.09** — `ndaal-sim` : ordonnanceur déterministe mono-thread, exécution d'un scénario à partir d'une graine, injection de pannes, rejouabilité

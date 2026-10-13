@@ -25,7 +25,7 @@
 
 | Élément | Convention |
 |---|---|
-| Ordre des octets | Petit-boutiste (*little-endian*) pour tous les entiers de taille fixe |
+| Ordre des octets | Petit-boutiste (*little-endian*) pour tous les entiers de taille fixe. Exception : les identifiants composés de 16 octets (`segment_id`, `chunk_id`, `version_id`) sont gros-boutistes, pour que l'ordre de leurs octets suive l'ordre de leurs valeurs (§10) |
 | Entiers variables | `varint` = LEB128 non signé ; `zigzag` pour les signés |
 | Chaînes | `varint` longueur + octets UTF-8 (clés utilisateur : octets arbitraires) |
 | Sommes de contrôle | CRC32C (Castagnoli), accéléré matériellement (crate `crc32c`) ; masqué comme dans LevelDB (`((crc >> 15) | (crc << 17)) + 0xa282ead8`) pour éviter les collisions avec des données contenant leur propre CRC |
@@ -54,7 +54,7 @@ exemple : data/wal/shard-03/00000000000000a2.wal
 
 | Décalage | Taille | Champ | Description |
 |---|---|---|---|
-| 0 | 8 | `magic` | `STRWAL01` |
+| 0 | 8 | `magic` | `NDLWAL01` |
 | 8 | 2 | `format` | Version de format du journal (actuellement 1) |
 | 10 | 2 | `shard_id` | Numéro du shard |
 | 12 | 4 | `flags` | Bit 0 : chiffré ; bit 1 : fichier recyclé |
@@ -190,7 +190,7 @@ Tous les segments (SST, vectoriels, métadonnées objet) partagent une **envelop
 
 | Taille | Champ | Description |
 |---|---|---|
-| 8 | `magic` | `STRSEG01` |
+| 8 | `magic` | `NDLSEG01` |
 | 2 | `format` | Version de l'enveloppe |
 | 2 | `kind` | `1` SST clé-valeur, `2` vectoriel, `3` métadonnées objet, `4` valeurs volumineuses, `5` charge utile |
 | 2 | `kind_format` | Version du format spécifique |
@@ -329,7 +329,7 @@ message ChunkRef {
 ```
 
 - Un bloc occupe une plage alignée sur 4 Kio : `en-tête de bloc (64 o) | données | bourrage`.
-- En-tête de bloc : `magic "STRBLK01"`, `chunk_id`, longueur, CRC32C des données, drapeaux (chiffré, compressé), `key_id`.
+- En-tête de bloc : `magic "NDLBLK01"`, `chunk_id`, longueur, CRC32C des données, drapeaux (chiffré, compressé), `key_id`.
 - **Table d'allocation** : `chunk_id → (fichier, décalage, longueur)`, stockée dans une SST interne de la partition système locale du nœud, journalisée.
 - Récupération d'espace : quand un fichier d'extension a plus de 50 % d'espace libéré, ses blocs vivants sont recopiés dans un nouveau fichier (classe `background`), puis le fichier est libéré.
 
@@ -341,7 +341,7 @@ message ChunkRef {
 
 ### 7.3 `DistributedBlobStore` : fragments
 
-- Fragment = `en-tête (magic "STRFRG01", chunk_id, index du fragment, k, m, longueur du bloc d'origine, CRC du fragment) | données`.
+- Fragment = `en-tête (magic "NDLFRG01", chunk_id, index du fragment, k, m, longueur du bloc d'origine, CRC du fragment) | données`.
 - Les fragments sont stockés sur les nœuds `storage` dans des fichiers d'extension (même format que §7.1).
 - Inventaire par nœud : SST locale `chunk_id → index de fragment, emplacement`.
 
@@ -410,6 +410,8 @@ Toutes les entrées ordonnées d'une partition partagent un espace de clés inte
 ---
 
 ## 10. Identifiants
+
+Les identifiants composés de 16 octets sont encodés en **gros-boutiste** : comparer leurs octets (noms de fichiers, clés triées, chaîne base32) revient à comparer leurs champs dans l'ordre. Implémentation : `ndaal-common::ids`.
 
 | Identifiant | Format | Génération |
 |---|---|---|
