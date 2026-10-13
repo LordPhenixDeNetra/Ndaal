@@ -13,11 +13,14 @@ publish = false
 [workspace.dependencies]
 # Centralized dependency versions (T01.01). Exact versions are pinned by Cargo.lock.
 getrandom = "0.4.3"
+ndaal-common = { path = "crates/ndaal-common", version = "0.0.0" }
 ndaal-io = { path = "crates/ndaal-io", version = "0.0.0" }
 proptest = "1.12.0"
 tempfile = "3.27.0"
 thiserror = "2.0.21"
 tokio = { version = "1.53.2", default-features = false }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", default-features = false }
 
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
@@ -33,3 +36,11 @@ todo = "warn"
 unimplemented = "warn"
 print_stdout = "warn"
 print_stderr = "warn"
+
+# ADR-030: a panic is a bug; the process stops and restarts from its log.
+# (Cargo ignores this for tests, which keep unwinding.)
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

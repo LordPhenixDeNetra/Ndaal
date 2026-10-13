@@ -1,4 +1,24 @@
-//! Error classification of ARCHITECTURE.md section 18.
+//! Error classification of ARCHITECTURE.md section 18, and the error guide.
+//!
+//! # Error guide (ARCHITECTURE.md sections 18.1 and 18.2, CLAUDE.md section 4.2)
+//!
+//! - **Typed per crate** with `thiserror`; no `anyhow` in libraries.
+//! - **Keep the cause**: wrap with `#[source]` / `#[from]`, add context, never
+//!   replace the original error.
+//! - **Classify**: every error type implements [`Classify`] ([`ErrorClass`]:
+//!   `Retryable`, `Client`, `Fatal`). Bytes decoded from disk that fail to
+//!   decode are `Fatal` (corruption), even though [`DecodeError`] says `Client`.
+//! - **Handle once**: an error is either returned or logged (and counted),
+//!   never both at every level.
+//! - **Messages**: English, lowercase, no trailing period; say what failed and
+//!   with which value; never a secret, a key or user data.
+//! - **Clients** get a stable code, a short message and the request
+//!   identifier ([`crate::request`]), never paths, stack traces or internals.
+//!   Mapping to protocol codes happens only in the frontends.
+//! - **Panics are bugs** (ADR-030): never panic on external input; binaries
+//!   abort on panic and the node restarts from its log; `catch_unwind` must not
+//!   hide one. `ndaal_observe::panic::install` logs the panic with its stack
+//!   trace and request first.
 
 use crate::bytes::DecodeError;
 

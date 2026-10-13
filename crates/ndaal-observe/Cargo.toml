@@ -8,5 +8,11 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
+[dependencies]
+ndaal-common.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["fmt", "json", "env-filter", "registry", "std"] }
+
 [lints]
 workspace = true
