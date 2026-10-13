@@ -10,6 +10,8 @@ allow = [
     "ISC",
     "Zlib",
     "Unicode-DFS-2016",
+    # Successor of Unicode-DFS-2016 (unicode-ident); added with C-02 on 2026-10-13.
+    "Unicode-3.0",
     "MPL-2.0",
 ]
 confidence-threshold = 0.93

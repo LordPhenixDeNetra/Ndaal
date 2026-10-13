@@ -473,7 +473,7 @@ Une configuration « petite machine » (2 cœurs, 2 Gio de RAM, SSD SATA) sert �
 | ID | Contrainte |
 |---|---|
 | C-01 | Le code du serveur DOIT être écrit en **Rust** (édition 2021 ou ultérieure). Aucune dépendance native en C/C++ dans le chemin critique, à l'exception de la bibliothèque C standard, des appels système et des primitives cryptographiques de `ring` (voir [ADR-020](DECISIONS.md#adr-020--exception-cryptographique-ring)). Les dépendances C optionnelles (par exemple compression) DOIVENT avoir une alternative en Rust pur. La console web, exécutée dans le navigateur, est écrite en TypeScript ([ADR-031](DECISIONS.md#adr-031--console-web-embarquée-en-svelte-et-typescript)) ; elle n'est jamais nécessaire au fonctionnement du serveur. |
-| C-02 | Licence du projet : **Apache 2.0**. Dépendances autorisées : MIT, Apache-2.0, BSD-2/3, ISC, Zlib, Unicode-DFS, MPL-2.0 (sans modification). Interdites : GPL, AGPL, SSPL, BSL et licences non libres. Contrôlé par `cargo deny`. |
+| C-02 | Licence du projet : **Apache 2.0**. Dépendances autorisées : MIT, Apache-2.0, BSD-2/3, ISC, Zlib, Unicode-DFS, Unicode-3.0 (sa remplaçante, ajoutée le 2026-10-13), MPL-2.0 (sans modification). Interdites : GPL, AGPL, SSPL, BSL et licences non libres. Contrôlé par `cargo deny`. |
 | C-03 | Aucune dépendance à un service externe pour fonctionner en mode nœud unique (pas de ZooKeeper, etcd, base externe). |
 | C-04 | Les protocoles Redis et S3 sont implémentés à partir de leur documentation publique ; aucun code sous licence incompatible n'est réutilisé. |
 | C-05 | Les marques Redis, Amazon S3, Qdrant, MinIO sont citées à titre de compatibilité uniquement. |
