@@ -17,6 +17,7 @@
 mod clock;
 mod disk;
 mod net;
+pub mod platform;
 pub mod real;
 mod rng;
 pub mod sim;

@@ -10,7 +10,7 @@ publish.workspace = true
 
 [dependencies]
 getrandom.workspace = true
-tokio = { workspace = true, features = ["rt", "time", "net", "io-util"] }
+tokio = { workspace = true, features = ["rt", "time", "net", "io-util", "signal", "macros"] }
 
 [dev-dependencies]
 proptest.workspace = true
