@@ -33,6 +33,14 @@ cli-error-unknown-option = Option inconnue : { $name }
 cli-error-invalid-value = Valeur absente ou invalide pour { $name }
 cli-error-usage = Ligne de commande invalide
 cli-error-hint = Lancez ndaal --help pour la liste des commandes et des options.
+cli-cmd-health = Vérifier qu'un nœud est prêt (contrôle de santé des conteneurs)
+cli-data-dir-error = Impossible de créer le dossier de données { $path } : { $error }
+cli-listen-error = Impossible d'écouter sur { $addr } : { $error }
+cli-health-not-ready = Le nœud { $addr } n'est pas prêt : { $reason }
+cli-health-unreachable = connexion impossible ({ $error })
+cli-health-timeout = pas de réponse en 5 secondes
+cli-health-status = statut HTTP { $status }
+cli-health-invalid = la réponse n'est pas du HTTP
 cli-not-available = La commande { $command } n'est pas encore disponible.
 cli-set-syntax = Valeur invalide pour --set : { $value } (attendu : section.cle=valeur).
 cli-config-read-error = Impossible de lire le fichier de configuration { $path } : { $error }
@@ -50,6 +58,8 @@ cli-expected-text = un texte
 cli-expected-choice = l'une des valeurs { $choices }
 cli-expected-addr = une adresse comme 127.0.0.1:8080
 cli-expected-log-level = un niveau ({ $levels }) ou une liste cible=niveau
+cli-expected-bool = true ou false
+cli-config-public-without-auth = { $key } (source : { $origin }) écoute sur une adresse non locale sans authentification. Fixez auth.allow_insecure = true seulement si c'est voulu.
 cli-expected-table = une table [section]
 cli-expected-scalar = une valeur simple, ni liste ni table
 cli-runtime-error = Démarrage impossible : { $error }

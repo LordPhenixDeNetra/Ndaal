@@ -69,6 +69,17 @@ pub enum ConfigError {
         /// What was expected, for a translated message.
         expected: Expected,
     },
+
+    /// A public listen address without authentication (ENF-SEC-04).
+    #[error(
+        "{key:?} in the {origin} listens on a non-loopback address without authentication; set auth.allow_insecure = true to allow it"
+    )]
+    PublicWithoutAuth {
+        /// The listen address parameter.
+        key: String,
+        /// Where its value comes from.
+        origin: Origin,
+    },
 }
 
 /// What an invalid value should have been.
@@ -108,6 +119,9 @@ pub struct Sources<'a> {
     pub env: Vec<(String, String)>,
     /// Command line values, `(section.key, value)`, in order.
     pub overrides: Vec<(String, String)>,
+    /// Defaults that depend on the system (`node.data_dir`, P-34), applied
+    /// over the built-in ones, below every other source.
+    pub defaults: Vec<(String, String)>,
 }
 
 /// Value of `node.lang`.
@@ -148,6 +162,14 @@ pub struct HttpConfig {
     pub listen: SocketAddr,
 }
 
+/// Section `[auth]`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuthConfig {
+    /// `auth.allow_insecure`: listen on a public address without
+    /// authentication.
+    pub allow_insecure: bool,
+}
+
 /// Section `[log]`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogConfig {
@@ -164,6 +186,8 @@ pub struct Config {
     pub node: NodeConfig,
     /// Section `[http]`.
     pub http: HttpConfig,
+    /// Section `[auth]`.
+    pub auth: AuthConfig,
     /// Section `[log]`.
     pub log: LogConfig,
 }
@@ -177,6 +201,9 @@ pub fn load(sources: &Sources<'_>) -> Result<Config, ConfigError> {
         .iter()
         .map(|p| (p.key, (p.default.to_owned(), Origin::Default)))
         .collect();
+    for (key, value) in &sources.defaults {
+        set(&mut values, key, value.clone(), Origin::Default)?;
+    }
     if let Some(text) = sources.file {
         for (key, value) in file_entries(text)? {
             set(&mut values, &key, value, Origin::File)?;
@@ -280,6 +307,21 @@ fn build(values: &Values) -> Result<Config, ConfigError> {
     let (listen, listen_origin) = get("http.listen");
     let (lang, lang_origin) = get("node.lang");
     let (format, format_origin) = get("log.format");
+    let (allow_insecure, allow_origin) = get("auth.allow_insecure");
+    let allow_insecure = match allow_insecure {
+        "true" => true,
+        "false" => false,
+        _ => return Err(invalid_value("auth.allow_insecure", allow_origin)),
+    };
+    let listen: std::net::SocketAddr = listen
+        .parse()
+        .map_err(|_| invalid_value("http.listen", listen_origin))?;
+    if !listen.ip().is_loopback() && !allow_insecure {
+        return Err(ConfigError::PublicWithoutAuth {
+            key: "http.listen".to_owned(),
+            origin: listen_origin,
+        });
+    }
     Ok(Config {
         node: NodeConfig {
             data_dir: PathBuf::from(get("node.data_dir").0),
@@ -291,11 +333,8 @@ fn build(values: &Values) -> Result<Config, ConfigError> {
                 _ => return Err(invalid_value("node.lang", lang_origin)),
             },
         },
-        http: HttpConfig {
-            listen: listen
-                .parse()
-                .map_err(|_| invalid_value("http.listen", listen_origin))?,
-        },
+        http: HttpConfig { listen },
+        auth: AuthConfig { allow_insecure },
         log: LogConfig {
             level: get("log.level").0.to_owned(),
             format: match format {
@@ -326,6 +365,10 @@ pub fn entries(config: &Config) -> Vec<(&'static str, String)> {
         ("node.name", config.node.name.clone()),
         ("node.lang", lang.to_owned()),
         ("http.listen", config.http.listen.to_string()),
+        (
+            "auth.allow_insecure",
+            config.auth.allow_insecure.to_string(),
+        ),
         ("log.level", config.log.level.clone()),
         ("log.format", format.to_owned()),
     ]

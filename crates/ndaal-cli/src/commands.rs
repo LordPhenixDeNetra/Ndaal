@@ -5,13 +5,16 @@ use std::path::Path;
 
 use clap::ArgMatches;
 use ndaal_common::config::{self, Config, LogFormatChoice, Sources};
-use ndaal_io::real::RealDisk;
+use ndaal_io::platform::default_data_dir;
+use ndaal_io::real::{RealDisk, TcpByteListener, shutdown_signal};
 use ndaal_io::{Disk, File, OpenOptions};
 use ndaal_observe::logs::{self, LogFormat};
 use ndaal_observe::{metrics::Registry, panic};
+use ndaal_proto_http::{NodeState, router, serve};
 
 use crate::cli::Globals;
 use crate::error::CliError;
+use crate::health;
 
 /// Largest configuration file read (1 MiB); real ones are a few KiB, and a
 /// bound keeps a wrong path (a disk image) from filling the memory.
@@ -73,10 +76,19 @@ pub(crate) fn load_config(
     if let Some(dir) = &globals.data_dir {
         overrides.push(("node.data_dir".to_owned(), dir.clone()));
     }
+    let data_dir = default_data_dir(|name| {
+        env.iter()
+            .find(|(key, _)| key == name)
+            .map(|(_, value)| value.clone())
+    });
     let sources = Sources {
         file,
         env: env.to_vec(),
         overrides,
+        defaults: vec![(
+            "node.data_dir".to_owned(),
+            data_dir.to_string_lossy().into_owned(),
+        )],
     };
     config::load(&sources).map_err(CliError::Config)
 }
@@ -97,6 +109,12 @@ pub(crate) async fn dispatch(
 ) -> Result<(), CliError> {
     match matches.subcommand() {
         Some(("server", _)) => server(&config?).await,
+        Some(("health", _)) => {
+            let addr = health::probe_addr(config?.http.listen);
+            health::check(addr)
+                .await
+                .map_err(|error| CliError::NotReady { addr, error })
+        }
         Some(("config", sub)) => match sub.subcommand_name() {
             Some("show") => print(&config::render(&config?)),
             _ => print(&config::reference()),
@@ -109,7 +127,9 @@ pub(crate) async fn dispatch(
     }
 }
 
-/// Starts a node: logs, panic policy, then waits for Ctrl-C.
+/// Starts a node: logs, panic policy, data directory, then the HTTP probes
+/// and metrics until Ctrl-C or SIGTERM. Ready once the directory exists and
+/// the port is bound.
 async fn server(config: &Config) -> Result<(), CliError> {
     let format = match config.log.format {
         LogFormatChoice::Json => LogFormat::Json,
@@ -119,13 +139,30 @@ async fn server(config: &Config) -> Result<(), CliError> {
         logs::init(format, &config.log.level).map_err(|e| CliError::Runtime(e.to_string()))?;
     let registry = Registry::default();
     panic::install(&registry);
-    tracing::info!(
-        data_dir = %config.node.data_dir.display(),
-        listen = %config.http.listen,
-        "node started"
-    );
-    // TODO(T01.22): serve /health/live, /health/ready and /metrics (P-27).
-    tokio::signal::ctrl_c()
+    let data_dir = &config.node.data_dir;
+    RealDisk
+        .create_dir_all(data_dir)
+        .await
+        .map_err(|error| CliError::DataDir {
+            path: data_dir.clone(),
+            error,
+        })?;
+    let listen = config.http.listen;
+    let listen_error = |error| CliError::Listen {
+        addr: listen,
+        error,
+    };
+    let listener = TcpByteListener::bind(listen).await.map_err(listen_error)?;
+    let addr = listener.local_addr().map_err(listen_error)?;
+    let state = NodeState::new(registry.clone());
+    state.set_ready();
+    tracing::info!(%addr, data_dir = %data_dir.display(), "http listening");
+    let shutdown = async {
+        if let Err(error) = shutdown_signal().await {
+            tracing::error!(%error, "cannot wait for a shutdown signal, stopping");
+        }
+    };
+    serve(listener, router(state), registry, shutdown)
         .await
         .map_err(|e| CliError::Runtime(e.to_string()))?;
     tracing::info!("node stopped");

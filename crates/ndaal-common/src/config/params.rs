@@ -23,6 +23,8 @@ pub enum Kind {
     Addr,
     /// A level (`info`) or a list of `target=level` directives.
     LogLevel,
+    /// `true` or `false`.
+    Bool,
 }
 
 impl Kind {
@@ -34,6 +36,7 @@ impl Kind {
             Self::Choice(_) => "choice",
             Self::Addr => "address",
             Self::LogLevel => "log-level",
+            Self::Bool => "bool",
         }
     }
 
@@ -45,6 +48,7 @@ impl Kind {
             Self::Choice(words) => words.contains(&value),
             Self::Addr => value.parse::<SocketAddr>().is_ok(),
             Self::LogLevel => is_log_directive(value),
+            Self::Bool => value == "true" || value == "false",
         }
     }
 
@@ -56,6 +60,7 @@ impl Kind {
             Self::Choice(words) => format!("one of {}", words.join(", ")),
             Self::Addr => "an address such as 127.0.0.1:8080".into(),
             Self::LogLevel => format!("a level ({}) or target=level list", LOG_LEVELS.join(", ")),
+            Self::Bool => "true or false".into(),
         }
     }
 }
@@ -104,6 +109,12 @@ pub const PARAMS: &[Param] = &[
         kind: Kind::Addr,
         default: "127.0.0.1:8080",
         help: "address of the HTTP API, health and metrics endpoints",
+    },
+    Param {
+        key: "auth.allow_insecure",
+        kind: Kind::Bool,
+        default: "false",
+        help: "allow a non-loopback listen address without authentication (ENF-SEC-04)",
     },
     Param {
         key: "log.level",

@@ -18,8 +18,9 @@ ndaal-common.workspace = true
 ndaal-i18n.workspace = true
 ndaal-io.workspace = true
 ndaal-observe.workspace = true
+ndaal-proto-http.workspace = true
 sys-locale.workspace = true
-tokio = { workspace = true, features = ["rt", "signal"] }
+tokio = { workspace = true, features = ["rt", "macros", "io-util"] }
 tracing.workspace = true
 
 [dev-dependencies]

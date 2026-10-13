@@ -223,6 +223,50 @@ fn a_pipe_is_never_read_as_an_empty_configuration() {
 }
 
 #[test]
+fn public_listen_is_refused_without_allow_insecure() {
+    let args = [
+        "--lang",
+        "fr",
+        "--set",
+        "http.listen=0.0.0.0:1",
+        "config",
+        "show",
+    ];
+    let output = ndaal(&args, None, &[]);
+    assert_eq!(code(&output), Some(2));
+    assert!(
+        stderr(&output).contains("auth.allow_insecure"),
+        "{}",
+        stderr(&output)
+    );
+}
+
+/// Containers set the file once in the environment, for `server` and for
+/// the `health` probe alike (EXPLOITATION.md section 1.2).
+#[test]
+fn ndaal_config_names_the_configuration_file() {
+    let (_dir, path) = config_file(
+        "[node]
+name = \"from-env-file\"
+",
+    );
+    let (_other_dir, other) = config_file(
+        "[node]
+name = \"from-flag\"
+",
+    );
+    let env = [("NDAAL_CONFIG", path_arg(&path))];
+    let shown = stdout(&ndaal(&["config", "show"], Some("en"), &env));
+    assert!(shown.contains("name = \"from-env-file\""), "{shown}");
+    let args = ["--config", path_arg(&other), "config", "show"];
+    let shown = stdout(&ndaal(&args, Some("en"), &env));
+    assert!(shown.contains("name = \"from-flag\""), "{shown}");
+    let missing = [("NDAAL_CONFIG", "missing-ndaal.toml")];
+    let output = ndaal(&["config", "show"], Some("en"), &missing);
+    assert_eq!(code(&output), Some(2));
+}
+
+#[test]
 fn unbuilt_commands_say_so() {
     for command in ["admin", "backup", "restore", "bench", "doctor"] {
         let output = ndaal(&[command], Some("en"), &[]);

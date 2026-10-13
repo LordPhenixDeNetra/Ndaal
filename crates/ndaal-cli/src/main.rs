@@ -5,9 +5,11 @@
 mod cli;
 mod commands;
 mod error;
+mod health;
 
 use std::ffi::OsString;
 use std::io::Write;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::error::ErrorKind;
@@ -15,6 +17,9 @@ use ndaal_common::config::LangChoice;
 use ndaal_i18n::{EN, Translator};
 
 use crate::error::CliError;
+
+/// Environment variable naming the configuration file, below `--config`.
+const CONFIG_ENV: &str = "NDAAL_CONFIG";
 
 fn main() -> ExitCode {
     let args: Vec<OsString> = std::env::args_os().collect();
@@ -34,7 +39,14 @@ fn main() -> ExitCode {
 
 async fn run(args: Vec<OsString>, env: Vec<(String, String)>) -> ExitCode {
     let globals = cli::early(&args);
-    let file = match &globals.config {
+    // `--config`, else `NDAAL_CONFIG`: a container sets the file once for the
+    // server and its health probe.
+    let config_path = globals.config.clone().or_else(|| {
+        env.iter()
+            .find(|(name, _)| name == CONFIG_ENV)
+            .map(|(_, path)| PathBuf::from(path))
+    });
+    let file = match &config_path {
         Some(path) => Some(commands::read_config(path).await),
         None => None,
     };
