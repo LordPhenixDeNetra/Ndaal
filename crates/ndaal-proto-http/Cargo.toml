@@ -8,5 +8,15 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
+[dependencies]
+axum.workspace = true
+ndaal-io.workspace = true
+ndaal-observe.workspace = true
+tokio = { workspace = true, features = ["rt", "io-util", "macros", "sync"] }
+tracing.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros", "io-util", "sync"] }
+
 [lints]
 workspace = true
