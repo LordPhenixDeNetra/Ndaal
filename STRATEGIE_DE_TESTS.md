@@ -85,7 +85,7 @@
 | Horloge | Temps virtuel avancé par l'ordonnanceur ; dérive d'horloge par nœud injectable |
 | Aléa | Générateur à graine unique |
 | Disque | Système de fichiers en mémoire modélisant le cache de pages : les écritures non synchronisées peuvent être perdues, réordonnées ou partiellement écrites lors d'une coupure |
-| Réseau | Messages avec latence aléatoire, pertes, duplications, réordonnancement, partitions |
+| Réseau | Connexions à trames, comme le protocole interne TCP (ADR-014) : latence aléatoire avec ordre conservé par connexion, connexions coupées ou refusées, partitions, nœuds arrêtés. Les pertes, duplications et réordonnancements de messages apparaissent au niveau des requêtes : trames perdues avec une connexion coupée, requêtes rejouées par les réessais, ordre différent entre connexions. Implémentation : `ndaal-io::sim::SimNetwork`, ordonnanceur : `ndaal-sim` |
 | Ordonnancement | Ordre d'exécution des tâches prêtes choisi par la graine |
 
 ### 4.2 Pannes injectées
@@ -93,7 +93,7 @@
 - Coupure de courant d'un ou plusieurs nœuds (perte de tout ce qui n'est pas synchronisé).
 - Redémarrage propre.
 - Disque : erreur d'E/S, écriture interrompue (*torn write*), corruption silencieuse d'un bloc, disque plein, latence extrême.
-- Réseau : partition (symétrique, asymétrique), latence élevée, perte de messages, nœud isolé.
+- Réseau : partition (symétrique ; asymétrique à venir, voir POINTS_REPORTES.md), latence élevée, coupure de connexion, nœud arrêté.
 - Horloge : saut en avant ou en arrière, dérive.
 - Opérations de cluster pendant les pannes : ajout et retrait de nœuds, division de partitions, transferts de leadership.
 
