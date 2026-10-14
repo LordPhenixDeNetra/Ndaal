@@ -37,9 +37,20 @@ Un commit = une intention. Pas de commit qui mélange une correction et un refor
 - Toute nouvelle logique s'écrit test d'abord : on voit le test échouer, puis on écrit le code ([CLAUDE.md §5](CLAUDE.md#5-tests)).
 - Ne désactivez, n'ignorez ni n'affaiblissez jamais un test pour faire passer la CI.
 
+### Fuzzing
+
+- Une cible = une fonction de [`crates/ndaal-fuzz`](crates/ndaal-fuzz/src/lib.rs) (inscrite dans `TARGETS`), un fichier `fuzz/fuzz_targets/<cible>.rs` qui l'appelle, et un corpus de départ dans `fuzz/corpus/<cible>/`, décrit dans [`fuzz/corpus/README.md`](fuzz/corpus/README.md).
+- Lancer une cible : `./scripts/fuzz.sh <cible> [secondes]`. Sous Windows, le script passe par Docker.
+- Une entrée qui a révélé un bogue est ajoutée au corpus avec la correction : c'est son test de non-régression.
+
+### Bancs et documentation
+
+- Micro-bancs : `cargo bench -p <crate>` ; voir [`bench/README.md`](bench/README.md).
+- Site de documentation : `./scripts/build-docs.sh` (il demande `mdbook`, installé par `./scripts/install-tools.sh mdbook`), puis ouvrir `docs/book/html/index.html`. Les documents restent à la racine du dépôt ; `docs/book/` est généré.
+
 ## Avant d'ouvrir une demande de fusion
 
-Lancez la liste de vérifications de [CLAUDE.md §11](CLAUDE.md#11-avant-de-déclarer-une-tâche-terminée), la seule tenue à jour : formatage, clippy, tests (`cargo nextest`), `cargo deny`, hygiène, vérification Linux (obligatoire sous macOS et Windows) et signature DCO. Les outils s'installent aux versions figées du projet avec `./scripts/install-tools.sh`. La CI relance tout cela sur chaque demande de fusion, sur Linux, macOS et Windows.
+Lancez la liste de vérifications de [CLAUDE.md §11](CLAUDE.md#11-avant-de-déclarer-une-tâche-terminée), la seule tenue à jour : formatage, clippy, tests (`cargo nextest`), `cargo deny`, hygiène, liens de la documentation, vérification Linux (obligatoire sous macOS et Windows) et signature DCO. Les outils s'installent aux versions figées du projet avec `./scripts/install-tools.sh`. La CI relance tout cela sur chaque demande de fusion, sur Linux, macOS et Windows.
 
 Dans la description de la demande de fusion, indiquez ce que vous avez lancé et le résultat, y compris ce qui a échoué ou n'a pas pu être lancé.
 

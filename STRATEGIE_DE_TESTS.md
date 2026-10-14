@@ -134,6 +134,11 @@ Des **clients simulés** exécutent des charges mixtes (clé-valeur, vecteurs, o
 
 Objectif : ≥ 1 milliard d'exécutions cumulées par cible avant la publication stable (ENF-SEC-03). Les corpus sont versionnés.
 
+**Mise en œuvre.**
+- Le corps de chaque cible est une fonction de la crate `ndaal-fuzz`, en Rust stable. Le corpus versionné (`fuzz/corpus/<cible>/`) y est rejoué par `cargo test` à chaque demande de fusion, sur les trois systèmes.
+- Le dossier `fuzz/` est un workspace `cargo fuzz` séparé, dont chaque cible appelle ce corps. Il se construit avec une nightly figée (`fuzz/rust-toolchain.toml`), sous Linux ou dans le conteneur de `scripts/fuzz.sh`.
+- Cibles en place : `common_codec` (décodeurs de `ndaal-common`). Les cibles du tableau ci-dessus arrivent avec leurs décodeurs (P-44).
+
 ---
 
 ## 6. Tests de durabilité et de pannes réelles
@@ -342,11 +347,11 @@ Décision : [ADR-028](DECISIONS.md#adr-028--cicd-sur-github-actions). Chaque wor
 |---|---|---|
 | `ci.yml` | Demande de fusion, poussée sur `main` | §13.1 ; matrice `ubuntu-24.04`, `ubuntu-24.04-arm`, `macos-latest`, `windows-latest` ; travail `docker` (construction de l'image, `docker compose up --wait`, `/health/ready`, arrêt sur SIGTERM) sur `ubuntu-24.04` ; travail `console` (Node.js, Playwright) sur `ubuntu-latest` |
 | `nightly.yml` | Planifié, chaque nuit | §13.2 (hors bancs) |
-| `bench.yml` | Planifié chaque nuit, et à la demande | Bancs de performance, d'isolation et comparatifs (§9, §10) sur exécuteurs auto-hébergés dédiés |
-| `fuzz.yml` | Planifié | Fuzzing nocturne, sauvegarde des corpus, ouverture de tickets |
+| `bench.yml` | Planifié chaque nuit, et à la demande | Bancs de performance, d'isolation et comparatifs (§9, §10) sur exécuteurs auto-hébergés dédiés. Aujourd'hui : micro-bancs `criterion` sur `ubuntu-24.04`, historique et graphe sur la branche `bench-data`, sans alerte en attendant D-05 (P-42) |
+| `fuzz.yml` | Planifié chaque nuit, à la demande, et sur une demande de fusion qui touche `fuzz/` ou `ndaal-fuzz` | Fuzzing nocturne (1 h par cible ; 60 s sur une demande de fusion), corpus conservé dans le cache et publié en artefact, ticket « fuzz: crash in <cible> » ouvert ou commenté en cas de plantage |
 | `docker.yml` | Fusion sur `main`, étiquette de version | Images multi-architectures, analyse de vulnérabilités, signature, publication |
 | `release.yml` | Étiquette `v*` | §13.3, puis construction, signature et publication de tous les artefacts |
-| `docs.yml` | Fusion sur `main` | Site de documentation, vérification des liens |
+| `docs.yml` | Demande de fusion, fusion sur `main`, chaque nuit | Vérification des liens (`scripts/check-links.sh`, aussi dans `ci.yml`) et construction du site mdBook ; sur `main` et la nuit, déploiement sur GitHub Pages avec le graphe des bancs sous `/bench/` |
 
 **Règles** :
 
