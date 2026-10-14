@@ -249,6 +249,16 @@ Ces bancs vérifient les exigences [ENF-COMP](CAHIER_DES_CHARGES.md#612-parité-
 | `cmp-obj-small` | `warp put/get/list`, 4–64 Kio | MinIO ou RustFS | ENF-COMP-07 |
 | `cmp-rag-mixed` | Application RAG de référence (§11) en charge | Valkey + Qdrant + MinIO | ENF-COMP-08 |
 
+**Mise en œuvre actuelle** (T01.18) :
+- `bench/compare/kv.sh` lance tour à tour la référence et le candidat, en conteneurs, sur les mêmes cœurs (`--cpuset-cpus`), avec la même charge `memtier_benchmark`. Il fait 5 passages alternés (A B, B A…), vide les caches quand il en a le droit, et consigne les empreintes des images, le noyau et les paramètres dans `metadata.json`.
+- `cargo run -p xtask -- compare <dossier>` prend la médiane de chaque côté, applique la tolérance d'ADR-027 et écrit `report.md`. Le code de sortie vaut 1 au-delà de la tolérance.
+- Le rapport publie les médianes, le minimum et le maximum de chaque côté (§9.1).
+- Tant que Ndaal n'a pas de frontal RESP, les deux côtés sont Valkey ; Ndaal devient le candidat en J03.
+- Écarts actuels avec la cible de ce paragraphe, levés avec D-05 (P-50) :
+  - les mesures nocturnes tournent sur les machines partagées de GitHub (4 processeurs), avec 1 cœur serveur, 60 s par passage et 5 passages, au lieu de 5 minutes sur 1 et 16 cœurs ;
+  - la charge est en boucle fermée (débit libre, après préremplissage de 100 000 clés), au lieu de la boucle ouverte à débit fixe de §9.1 ;
+  - le ticket porte l'étiquette `perf`, sans étiquette de priorité haute.
+
 **Fréquence et seuils** :
 
 - **Chaque nuit** : version courte (5 minutes par banc, 1 et 16 cœurs). Un écart défavorable au-delà de la tolérance d'ENF-COMP ouvre automatiquement un ticket de priorité haute.
@@ -348,6 +358,7 @@ Décision : [ADR-028](DECISIONS.md#adr-028--cicd-sur-github-actions). Chaque wor
 | `ci.yml` | Demande de fusion, poussée sur `main` | §13.1 ; matrice `ubuntu-24.04`, `ubuntu-24.04-arm`, `macos-latest`, `windows-latest` ; travail `docker` (construction de l'image, `docker compose up --wait`, `/health/ready`, arrêt sur SIGTERM) sur `ubuntu-24.04` ; travail `console` (Node.js, Playwright) sur `ubuntu-latest` |
 | `nightly.yml` | Planifié, chaque nuit | §13.2 (hors bancs) |
 | `bench.yml` | Planifié chaque nuit, et à la demande | Bancs de performance, d'isolation et comparatifs (§9, §10) sur exécuteurs auto-hébergés dédiés. Aujourd'hui : micro-bancs `criterion` sur `ubuntu-24.04`, historique et graphe sur la branche `bench-data`, sans alerte en attendant D-05 (P-42) |
+| `compare.yml` | Planifié chaque nuit, et à la demande (option `simulate_regression`) | Bancs comparatifs courts (§9.4) : rapport dans le résumé et en artefact, ticket « compare: <banc> beyond tolerance » ouvert ou commenté au-delà de la tolérance |
 | `fuzz.yml` | Planifié chaque nuit, à la demande, et sur une demande de fusion qui touche `fuzz/` ou `ndaal-fuzz` | Fuzzing nocturne (1 h par cible ; 60 s sur une demande de fusion), corpus conservé dans le cache et publié en artefact, ticket « fuzz: crash in <cible> » ouvert ou commenté en cas de plantage |
 | `docker.yml` | Fusion sur `main`, étiquette de version | Images multi-architectures, analyse de vulnérabilités, signature, publication |
 | `release.yml` | Étiquette `v*` | §13.3, puis construction, signature et publication de tous les artefacts |
