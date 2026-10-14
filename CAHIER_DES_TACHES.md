@@ -73,7 +73,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
-| J01 | Fondations du projet | 25 | 20 | 80 % | ~67 | En cours |
+| J01 | Fondations du projet | 25 | 22 | 88 % | ~67 | En cours |
 | J02 | Noyau de stockage | 26 | 0 | 0 % | ~106 | À faire |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **299** | **20** | **7 %** | **~1319** | |
+| **Total** | | **299** | **22** | **7 %** | **~1319** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -196,13 +196,13 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T01.14** — Infrastructure de fuzzing (`cargo fuzz`, corpus versionnés, exécution nocturne)
   - Estimation : S · Dépend de : T01.03 · Exigences : ENF-SEC-03
   - Fin : une cible d'exemple tourne chaque nuit, les plantages ouvrent un ticket.
-- [ ] **T01.15** — Infrastructure de bancs (`criterion`, dossier `bench/`, stockage et graphe des résultats nocturnes)
+- [x] **T01.15** — Infrastructure de bancs (`criterion`, dossier `bench/`, stockage et graphe des résultats nocturnes)
   - Estimation : S · Dépend de : T01.03 · Exigences : ENF-PERF
   - Fin : un micro-banc d'exemple est tracé dans le temps.
 - [x] **T01.16** — Fichiers du projet : `LICENSE` (Apache 2.0), `SECURITY.md`, `CONTRIBUTING.md` (DCO), code de conduite, modèles de tickets et de demandes de fusion
   - Estimation : XS · Dépend de : T01.01 · Exigences : ADR-001, ENF-SEC-05, ENF-QUAL-04
   - Fin : fichiers présents ; vérification DCO active en CI ; `CONTRIBUTING.md` impose un test de non-régression pour toute correction.
-- [ ] **T01.17** — Publier cette documentation dans `docs/` avec un site généré (mdBook)
+- [x] **T01.17** — Publier cette documentation dans `docs/` avec un site généré (mdBook)
   - Estimation : S · Dépend de : T01.01 · Exigences : ENF-DOC-01
   - Fin : site construit en CI ; liens internes vérifiés automatiquement.
 - [ ] **T01.18** — Banc d'essai comparatif `bench/compare/` : lancement tour à tour de Ndaal et d'une référence en conteneur (Valkey, Qdrant, MinIO/RustFS), confinement CPU identique, consignation des versions et configurations, comparaison automatique à la tolérance ENF-COMP, exécution nocturne
