@@ -6,4 +6,5 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 output="${1:-bench-output.txt}"
-cargo bench --workspace -- --output-format bencher | tee "$output"
+# --bench '*': only the criterion targets; libtest harnesses reject the option.
+cargo bench --workspace --bench '*' -- --output-format bencher | tee "$output"

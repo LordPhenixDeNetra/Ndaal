@@ -40,6 +40,9 @@ jobs:
       - name: Hygiene
         shell: bash
         run: ./scripts/check-hygiene.sh
+      - name: Documentation links
+        shell: bash
+        run: ./scripts/check-links.sh
       - name: Side-effect lint list (ADR-017)
         shell: bash
         run: ./scripts/check-lint.sh
@@ -68,6 +71,9 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Tests
         run: cargo nextest run --workspace
+      - name: Benchmarks run once (they must keep working)
+        if: runner.os == 'Linux'
+        run: cargo bench --workspace --bench '*' -- --test
       - name: Hygiene (line endings and paths as checked out on this system)
         shell: bash
         run: ./scripts/check-hygiene.sh
