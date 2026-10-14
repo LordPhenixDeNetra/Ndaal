@@ -1,0 +1,19 @@
+[package]
+name = "ndaal-fuzz"
+description = "Fuzz target bodies, run by cargo fuzz (fuzz/) and replayed on stable over the corpus"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+ndaal-common.workspace = true
+
+[dev-dependencies]
+ndaal-io.workspace = true
+tokio = { workspace = true, features = ["rt"] }
+
+[lints]
+workspace = true

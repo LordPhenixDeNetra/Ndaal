@@ -5,3 +5,7 @@
 *.bat text eol=crlf
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
+
+# Fuzz inputs are raw bytes: never convert their line endings
+fuzz/corpus/** -text
+fuzz/corpus/README.md text eol=lf

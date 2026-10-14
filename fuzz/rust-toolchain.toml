@@ -1,0 +1,5 @@
+# Nightly used by cargo fuzz only (-Zsanitizer); the project builds with the
+# stable version of the root rust-toolchain.toml. Pinned (CLAUDE.md 4.12).
+[toolchain]
+channel = "nightly-2026-10-01"
+profile = "minimal"

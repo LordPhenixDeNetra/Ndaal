@@ -10,6 +10,9 @@ const MAX_RUST_LINES: usize = 800;
 const MAX_RUST_TEST_LINES: usize = 1500;
 /// Extensions restricted to ASCII (CLAUDE.md section 4.7).
 const ASCII_ONLY: [&str; 4] = ["rs", "toml", "yml", "yaml"];
+/// Fuzz inputs: their bytes are the test data (trailing spaces, missing
+/// newlines, any character); only their names are checked.
+const RAW_DATA_DIR: &str = "fuzz/corpus/";
 /// Windows scripts, which require CRLF line endings.
 const CRLF_ALLOWED: [&str; 3] = ["bat", "cmd", "ps1"];
 
@@ -19,7 +22,8 @@ const CRLF_ALLOWED: [&str; 3] = ["bat", "cmd", "ps1"];
 /// their names are still checked.
 pub fn check_file(path: &str, bytes: &[u8]) -> Vec<Violation> {
     let mut found = check_path(path);
-    if bytes.contains(&0) {
+    let raw_data = path.starts_with(RAW_DATA_DIR) && !path.ends_with(".md");
+    if raw_data || bytes.contains(&0) {
         return found;
     }
     let Ok(text) = std::str::from_utf8(bytes) else {
@@ -157,6 +161,14 @@ mod tests {
         let found = rules("a.md", "\u{2764}\u{FE0F}\n");
         assert!(!found.is_empty());
         assert!(found.iter().all(|r| *r == (Rule::Emoji, Some(1))));
+    }
+
+    #[test]
+    fn fuzz_corpus_contents_are_raw_data() {
+        let input = "no final newline, trailing space \u{1F600} ";
+        assert!(rules("fuzz/corpus/common_codec/seed-1", input).is_empty());
+        assert!(!rules("fuzz/corpus/README.md", input).is_empty());
+        assert!(!rules("fuzz/corpus-notes.txt", input).is_empty());
     }
 
     #[test]
