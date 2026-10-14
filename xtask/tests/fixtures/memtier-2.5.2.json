@@ -1,0 +1,18 @@
+{
+  "ALL STATS": {
+    "Gets": {
+      "Ops/sec": 24540.58,
+      "Hits/sec": 24540.58,
+      "Misses/sec": 0.0
+    },
+    "Totals": {
+      "Ops/sec": 26999.25,
+      "Latency": 1.847,
+      "Percentile Latencies": {
+        "p50.00": 1.383,
+        "p99.00": 11.647,
+        "p99.90": 18.943
+      }
+    }
+  }
+}

@@ -1,12 +1,18 @@
 [package]
 name = "xtask"
-description = "Development tasks for the Ndaal repository (hygiene checks)"
+description = "Development tasks for the Ndaal repository (hygiene, links, book, compare)"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 publish = false
+
+[dependencies]
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true

@@ -5,7 +5,9 @@
 //! - `links`: relative links and anchors of the Markdown files
 //!   (`scripts/check-links.sh`);
 //! - `book`: sources of the documentation site in `docs/book/src/`
-//!   (`scripts/build-docs.sh`).
+//!   (`scripts/build-docs.sh`);
+//! - `compare <dir>`: verdict and report of a comparative benchmark run
+//!   (`bench/compare/`).
 
 #![forbid(unsafe_code)]
 // Command-line tool: printing is its output.
@@ -13,6 +15,7 @@
 // Development tool, not part of the engine: reads the repository directly.
 #![allow(clippy::disallowed_methods, clippy::disallowed_types)]
 
+mod compare;
 mod docs;
 mod hygiene;
 
@@ -24,8 +27,15 @@ fn main() -> ExitCode {
         Some("hygiene") => run_hygiene(),
         Some("links") => run_links(),
         Some("book") => run_book(),
+        Some("compare") => match std::env::args().nth(2) {
+            Some(dir) => run_compare(Path::new(&dir)),
+            None => {
+                eprintln!("usage: cargo run -p xtask -- compare <results dir>");
+                ExitCode::from(2)
+            }
+        },
         _ => {
-            eprintln!("usage: cargo run -p xtask -- hygiene|links|book");
+            eprintln!("usage: cargo run -p xtask -- hygiene|links|book|compare");
             ExitCode::from(2)
         }
     }
@@ -103,6 +113,70 @@ fn run_links() -> ExitCode {
     } else {
         ExitCode::FAILURE
     }
+}
+
+/// Compares the runs of `dir` (`metadata.json`, `reference-*.json`,
+/// `candidate-*.json`), writes `report.md` and prints it. Exit code 0 within
+/// the tolerance, 1 beyond it, 2 on invalid input.
+fn run_compare(dir: &Path) -> ExitCode {
+    match compare_dir(dir) {
+        Ok((report, within)) => {
+            println!("{report}");
+            if within {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
+        }
+        Err(message) => {
+            eprintln!("compare: {message}");
+            ExitCode::from(2)
+        }
+    }
+}
+
+fn compare_dir(dir: &Path) -> Result<(String, bool), String> {
+    let read = |path: &Path| {
+        std::fs::read_to_string(path).map_err(|e| format!("cannot read {}: {e}", path.display()))
+    };
+    let metadata: serde_json::Value = serde_json::from_str(&read(&dir.join("metadata.json"))?)
+        .map_err(|e| format!("invalid metadata.json: {e}"))?;
+    let mut sides = [Vec::new(), Vec::new()];
+    let entries =
+        std::fs::read_dir(dir).map_err(|e| format!("cannot list {}: {e}", dir.display()))?;
+    let mut paths: Vec<PathBuf> = entries.filter_map(|e| e.ok().map(|e| e.path())).collect();
+    paths.sort();
+    for path in paths {
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default();
+        let side = match name {
+            n if n.starts_with("reference-") && n.ends_with(".json") => 0,
+            n if n.starts_with("candidate-") && n.ends_with(".json") => 1,
+            _ => continue,
+        };
+        let sample = compare::memtier::parse(&read(&path)?).map_err(|e| format!("{name}: {e}"))?;
+        sides[side].push(sample);
+    }
+    let repeats = metadata.get("repeats").and_then(serde_json::Value::as_u64);
+    for (name, side) in [("reference", &sides[0]), ("candidate", &sides[1])] {
+        if repeats != Some(side.len() as u64) {
+            return Err(format!(
+                "{} {name} runs, metadata.json repeats is {repeats:?}: runs of another invocation?",
+                side.len()
+            ));
+        }
+    }
+    let verdict = compare::verdict::compare(&sides[0], &sides[1])?;
+    let bench = metadata
+        .get("bench")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("unnamed");
+    let report = compare::verdict::report(bench, &metadata, &verdict);
+    let out = dir.join("report.md");
+    std::fs::write(&out, &report).map_err(|e| format!("cannot write {}: {e}", out.display()))?;
+    Ok((report, verdict.within_tolerance))
 }
 
 /// Writes the mdBook sources: every page of the book and `SUMMARY.md`.
@@ -188,7 +262,7 @@ fn is_crate_root(path: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::list_files;
+    use super::{compare_dir, list_files};
 
     // cargo test runs from xtask/, a subdirectory: paths must still be
     // relative to the repository root and cover the whole repository.
@@ -202,5 +276,45 @@ mod tests {
         ] {
             assert!(files.iter().any(|f| f == expected), "{expected} not listed");
         }
+    }
+
+    fn results(dir: &std::path::Path, repeats: usize, per_side: usize) {
+        let fixture = include_str!("../tests/fixtures/memtier-2.5.2.json");
+        let metadata = format!("{{\"bench\": \"kv\", \"repeats\": {repeats}}}");
+        std::fs::write(dir.join("metadata.json"), metadata).expect("metadata");
+        for side in ["reference", "candidate"] {
+            for i in 1..=per_side {
+                std::fs::write(dir.join(format!("{side}-{i}.json")), fixture).expect("run");
+            }
+        }
+    }
+
+    #[test]
+    fn compare_dir_writes_the_report() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        results(dir.path(), 2, 2);
+        std::fs::write(dir.path().join("notes.txt"), "ignored").expect("notes");
+        let (report, within) = compare_dir(dir.path()).expect("valid");
+        assert!(within, "identical runs");
+        assert!(report.contains("Medians of 2 runs per side"), "{report}");
+        assert!(dir.path().join("report.md").exists());
+    }
+
+    /// Runs left by an earlier invocation must not mix in silently.
+    #[test]
+    fn compare_dir_checks_the_number_of_runs() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        results(dir.path(), 2, 3);
+        let error = compare_dir(dir.path()).expect_err("3 runs, 2 announced");
+        assert!(error.contains("repeats"), "{error}");
+    }
+
+    #[test]
+    fn compare_dir_names_the_broken_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        results(dir.path(), 1, 1);
+        std::fs::write(dir.path().join("candidate-1.json"), "{}").expect("broken");
+        let error = compare_dir(dir.path()).expect_err("broken run");
+        assert!(error.contains("candidate-1.json"), "{error}");
     }
 }
