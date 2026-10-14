@@ -73,7 +73,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
-| J01 | Fondations du projet | 25 | 25 | 100 % | ~67 | En cours |
+| J01 | Fondations du projet | 26 | 25 | 96 % | ~68 | En cours |
 | J02 | Noyau de stockage | 26 | 0 | 0 % | ~106 | À faire |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **299** | **25** | **8 %** | **~1319** | |
+| **Total** | | **300** | **25** | **8 %** | **~1320** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -211,7 +211,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T01.19** — Hygiène du code en CI : `rustfmt.toml` (`max_width = 100`), `clippy.toml` (seuils de taille), `.gitattributes` (LF), script `scripts/check-hygiene.sh` (taille des fichiers, emojis, caractères non ASCII, espaces de fin, fins de ligne)
   - Estimation : S · Dépend de : T01.03 · Exigences : ENF-QUAL-02, CLAUDE.md §4.6 et §4.7
   - Fin : la CI rejette une demande de fusion d'essai contenant un emoji, un fichier `.rs` de plus de 800 lignes et une fonction de plus de 100 lignes ; les exceptions déclarées (code généré, `#[allow]` justifié) passent.
-- [x] **T01.20** — Workflows GitHub Actions `ci.yml`, `nightly.yml`, `docs.yml` : permissions minimales, actions épinglées par empreinte, cache de compilation, `concurrency`, Dependabot (Cargo et actions), protection de `main` *(Dependabot a tourné avec succès pour Cargo et les actions le 2026-10-13 sans rien à proposer : aucune dépendance, actions déjà à jour)*
+- [x] **T01.20** — Workflows GitHub Actions `ci.yml`, `docs.yml` (le workflow nocturne `nightly.yml` est passé à T01.26) : permissions minimales, actions épinglées par empreinte, cache de compilation, `concurrency`, Dependabot (Cargo et actions), protection de `main` *(Dependabot a tourné avec succès pour Cargo et les actions le 2026-10-13 sans rien à proposer : aucune dépendance, actions déjà à jour)*
   - Estimation : M · Dépend de : T01.03 · Exigences : ENF-QUAL-06, ENF-QUAL-07, ADR-028
   - Fin : une demande de fusion déclenche `ci.yml` sur les quatre exécuteurs ; `main` refuse une fusion sans CI verte ni relecture ; Dependabot ouvre ses premières demandes.
 - [x] **T01.21** — Suite de tests complète sous macOS et Windows en CI (implémentations d'E/S de repli, chemins, fins de ligne)
@@ -229,6 +229,9 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T01.25** — Versions figées des outils (`rust-toolchain.toml`, `scripts/tools.versions`, installation identique en local et en CI) et script `scripts/check-linux.sh` (clippy et tests compilés pour Linux dans le conteneur Rust figé, depuis macOS ou Windows)
   - Estimation : S · Dépend de : T01.03 · Exigences : CLAUDE.md §4.12 et §11, ENF-PORT-02
   - Fin : la CI et le poste de développement utilisent les mêmes versions ; sous Windows, `check-linux.sh` signale une erreur volontaire placée dans du code `#[cfg(target_os = "linux")]`.
+- [ ] **T01.26** — `nightly.yml` : simulation déterministe nocturne (≥ 10 000 graines, plage différente chaque nuit), commande `ndaal-sim sweep`, ticket avec les commandes de rejeu en cas de graine fautive
+  - Estimation : S · Dépend de : T01.09, T01.20 · Exigences : STRATEGIE §13.2 et §14 (critère 2)
+  - Fin : trois nuits consécutives vertes sur `main`.
 
 ---
 
@@ -1229,3 +1232,4 @@ Toute tâche ajoutée, abandonnée ou déplacée est consignée ici.
 | 2026-10-12 | T12.13 | Modifiée (périmètre élargi : socle de la console) | Console embarquée de premier rang (EF-OPS-11 passée en Importante, ADR-031) | — |
 | 2026-10-12 | T12.22 à T12.27, T13.21, T13.22 | Ajoutées | Écrans de la console, API publique associée, tests ; exploration multi-modèles (EF-OPS-14) | — |
 | 2026-10-12 | T01.25 | Ajoutée | Versions figées des outils et vérification du code propre à Linux depuis Windows ou macOS (CLAUDE.md §4.12, §11) | — |
+| 2026-10-14 | T01.26 | Ajoutée ; T01.20 modifiée (sans `nightly.yml`) | La simulation nocturne exigée pour clore un jalon (STRATEGIE §14, critère 2) n'existait pas : T01.20 avait été cochée sur son critère de fin, qui ne la demandait pas | — |
