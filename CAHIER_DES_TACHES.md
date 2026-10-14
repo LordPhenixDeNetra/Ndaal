@@ -73,7 +73,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
-| J01 | Fondations du projet | 25 | 23 | 92 % | ~67 | En cours |
+| J01 | Fondations du projet | 25 | 25 | 100 % | ~67 | En cours |
 | J02 | Noyau de stockage | 26 | 0 | 0 % | ~106 | À faire |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **299** | **23** | **8 %** | **~1319** | |
+| **Total** | | **299** | **25** | **8 %** | **~1319** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -193,7 +193,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T01.13** — Mesure de couverture et rapport en CI
   - Estimation : S · Dépend de : T01.03 · Exigences : ENF-QUAL-01
   - Fin : rapport publié sur chaque demande de fusion.
-- [ ] **T01.14** — Infrastructure de fuzzing (`cargo fuzz`, corpus versionnés, exécution nocturne)
+- [x] **T01.14** — Infrastructure de fuzzing (`cargo fuzz`, corpus versionnés, exécution nocturne)
   - Estimation : S · Dépend de : T01.03 · Exigences : ENF-SEC-03
   - Fin : une cible d'exemple tourne chaque nuit, les plantages ouvrent un ticket.
 - [x] **T01.15** — Infrastructure de bancs (`criterion`, dossier `bench/`, stockage et graphe des résultats nocturnes)
@@ -205,7 +205,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T01.17** — Publier cette documentation dans `docs/` avec un site généré (mdBook)
   - Estimation : S · Dépend de : T01.01 · Exigences : ENF-DOC-01
   - Fin : site construit en CI ; liens internes vérifiés automatiquement.
-- [ ] **T01.18** — Banc d'essai comparatif `bench/compare/` : lancement tour à tour de Ndaal et d'une référence en conteneur (Valkey, Qdrant, MinIO/RustFS), confinement CPU identique, consignation des versions et configurations, comparaison automatique à la tolérance ENF-COMP, exécution nocturne
+- [x] **T01.18** — Banc d'essai comparatif `bench/compare/` : lancement tour à tour de Ndaal et d'une référence en conteneur (Valkey, Qdrant, MinIO/RustFS), confinement CPU identique, consignation des versions et configurations, comparaison automatique à la tolérance ENF-COMP, exécution nocturne
   - Estimation : M · Dépend de : T01.15 · Exigences : ENF-COMP, O7, ADR-027
   - Fin : un banc d'exemple compare Valkey à lui-même et produit un rapport ; un écart simulé au-delà de la tolérance ouvre un ticket.
 - [x] **T01.19** — Hygiène du code en CI : `rustfmt.toml` (`max_width = 100`), `clippy.toml` (seuils de taille), `.gitattributes` (LF), script `scripts/check-hygiene.sh` (taille des fichiers, emojis, caractères non ASCII, espaces de fin, fins de ligne)
