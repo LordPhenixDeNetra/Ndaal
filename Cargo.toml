@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = ["crates/*", "xtask"]
+# cargo fuzz workspace, built with its own nightly (fuzz/rust-toolchain.toml).
+exclude = ["fuzz"]
 
 [workspace.package]
 version = "0.0.0"
@@ -13,11 +15,13 @@ publish = false
 [workspace.dependencies]
 # Centralized dependency versions (T01.01). Exact versions are pinned by Cargo.lock.
 axum = { version = "0.8.9", default-features = false, features = ["http1", "tokio"] }
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
 clap = { version = "4.6.7", default-features = false, features = ["std"] }
 fluent-bundle = "0.16.0"
 fluent-syntax = "0.12.0"
 getrandom = "0.4.3"
 ndaal-common = { path = "crates/ndaal-common", version = "0.0.0" }
+ndaal-fuzz = { path = "crates/ndaal-fuzz", version = "0.0.0" }
 ndaal-i18n = { path = "crates/ndaal-i18n", version = "0.0.0" }
 ndaal-io = { path = "crates/ndaal-io", version = "0.0.0" }
 ndaal-observe = { path = "crates/ndaal-observe", version = "0.0.0" }

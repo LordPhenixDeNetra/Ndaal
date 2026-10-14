@@ -3,3 +3,10 @@ CLAUDE.local.md
 
 # Compilation Rust
 /target/
+
+# cargo fuzz build output and findings (fuzz/Cargo.lock is versioned: CLAUDE.md 4.12)
+/fuzz/target/
+/fuzz/artifacts/
+
+# Documentation site, generated (scripts/build-docs.sh)
+/docs/book/

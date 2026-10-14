@@ -1,0 +1,26 @@
+# cargo fuzz targets (T01.14, STRATEGIE_DE_TESTS.md section 5). A separate
+# workspace: it builds only with the nightly of fuzz/rust-toolchain.toml.
+# Each target wraps a body of crates/ndaal-fuzz, replayed on stable.
+[package]
+name = "ndaal-fuzz-targets"
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+ndaal-fuzz = { path = "../crates/ndaal-fuzz" }
+
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "common_codec"
+path = "fuzz_targets/common_codec.rs"
+test = false
+doc = false
+bench = false
