@@ -1,0 +1,61 @@
+# Nightly micro-benchmarks (T01.15, STRATEGIE_DE_TESTS.md section 9.3).
+# GitHub-hosted runners are noisy: the history shows a trend, with no
+# regression alert until the reference machines exist (D-05, P-42).
+# Results are appended to the bench-data branch, never to main.
+
+name: bench
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bench
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  micro:
+    name: micro
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      # Push to the bench-data branch only (main is protected by its ruleset).
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Run the micro-benchmarks
+        shell: bash
+        run: bench/micro.sh bench-output.txt
+      - name: Create the bench-data branch on the first run
+        shell: bash
+        # github-action-benchmark fetches and switches to the branch; it does
+        # not create it.
+        run: |
+          if ! git ls-remote --exit-code --heads origin bench-data > /dev/null; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git switch --orphan bench-data
+            git commit --allow-empty -m "chore: start the benchmark history"
+            git push origin bench-data
+            git switch -
+          fi
+      - name: Append to the history
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1.22.2
+        with:
+          name: micro
+          tool: cargo
+          output-file-path: bench-output.txt
+          gh-pages-branch: bench-data
+          benchmark-data-dir-path: micro
+          github-token: ${{ github.token }}
+          auto-push: true
+          comment-on-alert: false
+          fail-on-alert: false
