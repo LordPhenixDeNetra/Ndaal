@@ -1,0 +1,94 @@
+# Nightly deterministic simulation (T01.26, STRATEGIE_DE_TESTS.md sections
+# 4, 13.2 and 14): at least 10 000 seeds, a different range every night.
+# A seed that does not finish or does not replay opens or updates a ticket.
+
+name: nightly
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "Number of seeds"
+        type: number
+        default: 10000
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  simulation:
+    name: simulation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      issues: write
+    env:
+      COUNT: ${{ inputs.count || 10000 }}
+      # A new range every run: seeds from run_number * 10 000.
+      FROM: ${{ github.run_number }}0000
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Build the simulator
+        run: cargo build --release --quiet -p ndaal-sim
+      - name: Sweep the seeds
+        id: sweep
+        shell: bash
+        run: |
+          set +e
+          cargo run --release --quiet -p ndaal-sim -- sweep --from "$FROM" --count "$COUNT" \
+            > sweep.txt
+          code=$?
+          {
+            echo '```'
+            tail -n 1 sweep.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: simulation-sweep
+          path: sweep.txt
+          retention-days: 30
+      - name: Open or update the ticket
+        # Failing seeds (exit 1) or a panic (abort: 134), which also prints
+        # "seed N: panic: ..."; not a usage error (2). A build failure stops
+        # the previous step, so the sweep step and its code never exist.
+        if: >-
+          failure() && steps.sweep.outputs.code != ''
+          && steps.sweep.outputs.code != '0' && steps.sweep.outputs.code != '2'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="sim: failing seeds in ping_pong"
+          failing="$(grep -c '^seed ' sweep.txt || true)"
+          # grep -m, not head: head would close the pipe early and, under
+          # pipefail, SIGPIPE on grep would stop the step before the ticket.
+          # Replay with sweep --count 1 in release: it plays the seed twice
+          # (a non-reproducible seed shows up) with the nightly profile.
+          replay="$(grep -m 20 '^seed ' sweep.txt \
+            | sed 's/^seed \([0-9]*\): \(.*\)$/- \x60cargo run --release -p ndaal-sim -- sweep --from \1 --count 1\x60 (\2)/')"
+          body="$(printf '%s failing seed(s) in %s (20 at most listed).\n\n%s\n\nWhole sweep: \140cargo run --release -p ndaal-sim -- sweep --from %s --count %s\140. A fix comes with its seed as a regression test.\n' \
+            "$failing" "$RUN_URL" "$replay" "$FROM" "$COUNT")"
+          gh label create sim --description "Simulation finding" --color 5319E7 2>/dev/null || true
+          existing="$(gh issue list --state open --label sim --json number,title \
+            --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --label sim --body "$body"
+          fi
