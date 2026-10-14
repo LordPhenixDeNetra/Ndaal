@@ -10,3 +10,6 @@ CLAUDE.local.md
 
 # Documentation site, generated (scripts/build-docs.sh)
 /docs/book/
+
+# Results of the comparative benchmarks (bench/compare/)
+/bench-results/

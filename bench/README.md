@@ -18,6 +18,16 @@ cargo bench -p ndaal-common            # rapport détaillé dans target/criterio
 bench/micro.sh                          # tous les micro-bancs, format bencher
 ```
 
-## À venir
+## Bancs comparatifs (`compare/`)
 
-- `compare/` : bancs comparatifs contre Valkey, Qdrant et MinIO (T01.18).
+Méthode et règles d'équité : [STRATEGIE_DE_TESTS.md §9.4](../STRATEGIE_DE_TESTS.md#94-bancs-comparatifs-parité-avec-les-services-remplacés). Tolérance : [ADR-027](../DECISIONS.md#adr-027--parité-de-performance-avec-les-services-remplacés).
+
+```bash
+bench/compare/kv.sh --duration 60 --repeats 5 --out bench-results/kv   # passages (Docker)
+cargo run -p xtask -- compare bench-results/kv                        # verdict et report.md
+```
+
+- Options de `kv.sh` : `--server-cpus`, `--client-cpus`, `--reference`, `--candidate`, `--candidate-cpu-quota` (bride le candidat, pour simuler un écart).
+- `compare` sort avec le code 0 dans la tolérance, 1 au-delà, 2 si les résultats sont invalides.
+- Le workflow `compare.yml` tourne chaque nuit. Le lancer à la main avec `simulate_regression` doit ouvrir le ticket « compare: kv beyond tolerance ».
+- Pour l'instant, les deux côtés sont Valkey (`valkey.conf`) : Ndaal devient le candidat avec son frontal RESP (J03).
