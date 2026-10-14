@@ -1,0 +1,15 @@
+# Documentation site (T01.17, ENF-DOC-01). Sources are generated from the
+# documents at the repository root by `cargo run -p xtask -- book`
+# (scripts/build-docs.sh); never edit docs/book/ by hand.
+[book]
+title = "Ndaal"
+description = "Moteur de donnees unifie : cle-valeur, vecteurs et objets"
+language = "fr"
+src = "book/src"
+
+[build]
+build-dir = "book/html"
+create-missing = false
+
+[output.html]
+git-repository-url = "https://github.com/LordPhenixDeNetra/Ndaal"
