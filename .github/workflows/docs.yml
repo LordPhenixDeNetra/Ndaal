@@ -20,7 +20,10 @@ permissions:
 
 concurrency:
   group: docs-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push cancels the run of a pull request; a run in progress on
+  # main is never cancelled (P-08). GitHub still keeps one pending run per
+  # group, so a third run drops the pending one.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CARGO_TERM_COLOR: always
