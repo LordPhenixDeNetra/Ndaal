@@ -45,7 +45,9 @@ jobs:
             git switch --orphan bench-data
             git commit --allow-empty -m "chore: start the benchmark history"
             git push origin bench-data
-            git switch -
+            # Back to the commit under test. Not `git switch -`: the checkout
+            # keeps no reflog, so there is no previous branch to return to.
+            git checkout --quiet --detach "$GITHUB_SHA"
           fi
       - name: Append to the history
         uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1.22.2
