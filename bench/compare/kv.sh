@@ -17,6 +17,12 @@ VALKEY="valkey/valkey:9.0.6@sha256:63346cb24a61221e76bdf41acce99b3968a9fa83d8122
 MEMTIER="redislabs/memtier_benchmark:2.5.2@sha256:389090e9ef13701f36f5ac97485742618e648adbf76c008418383594a05c1659"
 # Longest wait for a server to answer PING, in seconds.
 READY_TIMEOUT=30
+# Keys written before measuring, then read and written by the load: every GET
+# hits a 100-byte value (a load on an empty keyspace only measures misses).
+KEYS=100000
+# The measured load (cmp-kv-latency, short version, closed loop), recorded as
+# is in metadata.json.
+LOAD="--protocol=redis --ratio=1:10 --data-size=100 --key-maximum=$KEYS --threads=2 --clients=25"
 
 server_cpus=0
 client_cpus=2,3
@@ -51,6 +57,11 @@ for cpu in $(echo "$server_cpus,$client_cpus" | tr ',-' '  '); do
   fi
 done
 
+if [ -n "$(ls -A "$out" 2> /dev/null)" ]; then
+  # Runs of an earlier invocation would mix into the comparison.
+  echo "kv.sh: $out is not empty" >&2
+  exit 2
+fi
 mkdir -p "$out"
 # Windows path under Git Bash (pwd -W) for docker -v, plain path elsewhere.
 out_abs="$(cd "$out" && (pwd -W 2>/dev/null || pwd))"
@@ -85,22 +96,29 @@ run_side() {
   MSYS_NO_PATHCONV=1 docker run -d --name "$server" --network "$network" "${limits[@]}" \
     -v "$conf_abs:/etc/valkey/valkey.conf:ro" "$image" \
     valkey-server /etc/valkey/valkey.conf > /dev/null
-  local waited=0
+  # Wall-clock deadline: each docker exec takes time of its own.
+  local deadline=$((SECONDS + READY_TIMEOUT))
   until docker exec "$server" valkey-cli ping 2> /dev/null | grep -q PONG; do
-    waited=$((waited + 1))
-    if [ "$waited" -ge "$READY_TIMEOUT" ]; then
-      echo "kv.sh: $side server did not answer PING within ${READY_TIMEOUT}s" >&2
+    local running
+    running="$(docker inspect --format '{{.State.Running}}' "$server" 2> /dev/null || echo false)"
+    if [ "$running" != true ] || [ "$SECONDS" -ge "$deadline" ]; then
+      echo "kv.sh: $side server did not answer PING (running: $running)" >&2
       docker logs "$server" >&2 || true
       exit 1
     fi
     sleep 1
   done
+  # Preload, not measured: every key once, in order.
+  docker run --rm --network "$network" --cpuset-cpus "$client_cpus" "$MEMTIER" \
+    --server="$server" --port=6379 --protocol=redis --ratio=1:0 --data-size=100 \
+    --key-pattern=P:P --key-maximum="$KEYS" --requests=allkeys --hide-histogram \
+    > /dev/null 2>&1
   echo "kv.sh: run $index, $side"
+  # shellcheck disable=SC2086 # LOAD holds several options on purpose.
   MSYS_NO_PATHCONV=1 docker run --rm --network "$network" --cpuset-cpus "$client_cpus" \
     -v "$out_abs:/out" "$MEMTIER" \
-    --server="$server" --port=6379 --protocol=redis --ratio=1:10 --data-size=100 \
-    --threads=2 --clients=25 --test-time="$duration" --hide-histogram \
-    --json-out-file="/out/$side-$index.json" > /dev/null
+    --server="$server" --port=6379 $LOAD --test-time="$duration" --hide-histogram \
+    --json-out-file="/out/$side-$index.json" > /dev/null 2>&1
   docker rm -f "$server" > /dev/null
 }
 
@@ -120,7 +138,7 @@ digest() { docker image inspect --format '{{index .RepoDigests 0}}' "$1"; }
 cat > "$out/metadata.json" << JSON
 {
   "bench": "kv",
-  "load": "memtier_benchmark --protocol=redis --ratio=1:10 --data-size=100 --threads=2 --clients=25",
+  "load": "memtier_benchmark $LOAD, after a preload of $KEYS keys",
   "durability": "none (save \"\", appendonly no)",
   "reference": "$(digest "$reference")",
   "candidate": "$(digest "$candidate")",
