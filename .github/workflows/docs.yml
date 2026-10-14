@@ -1,0 +1,81 @@
+# Documentation site (T01.17, ENF-DOC-01, STRATEGIE_DE_TESTS.md section 13.4).
+# Pull requests: links and build. main and nightly: build with the
+# micro-benchmark history (bench-data branch, under /bench/) and deploy to
+# GitHub Pages (Settings > Pages > Source: GitHub Actions).
+
+name: docs
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # After the nightly benchmarks (bench.yml, 03:00 UTC).
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          # Tools are cached in ~/.cargo/bin: a new pinned version needs a new key.
+          key: ${{ hashFiles('scripts/tools.versions') }}
+      - name: Install pinned tools
+        shell: bash
+        run: ./scripts/install-tools.sh mdbook
+      - name: Links
+        shell: bash
+        run: ./scripts/check-links.sh
+      - name: Build the site
+        shell: bash
+        run: ./scripts/build-docs.sh
+      - name: Add the benchmark history
+        if: github.event_name != 'pull_request'
+        shell: bash
+        # The branch exists after the first nightly benchmark run.
+        run: |
+          if git fetch --depth 1 origin bench-data; then
+            mkdir -p docs/book/html/bench
+            git --work-tree=docs/book/html/bench checkout FETCH_HEAD -- .
+            git reset --quiet
+          else
+            echo "no bench-data branch yet"
+          fi
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: github.event_name != 'pull_request'
+        with:
+          path: docs/book/html
+
+  deploy:
+    name: deploy
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

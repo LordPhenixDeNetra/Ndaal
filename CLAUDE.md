@@ -220,6 +220,7 @@ cargo nextest run --workspace
 ./scripts/check-deny.sh                      # licences, avis de sécurité, sources
 ./scripts/check-hygiene.sh                   # taille des fichiers, emojis, non ASCII, fins de ligne
 ./scripts/check-lint.sh                      # chaque interdiction de clippy.toml est appliquée (ADR-017)
+./scripts/check-links.sh                     # liens relatifs et ancres de tous les .md
 ./scripts/check-linux.sh                     # clippy et tests compilés pour Linux (macOS, Windows)
 ./scripts/check-dco.sh origin/main HEAD      # chaque commit signé (git commit -s)
 ./scripts/check-workflows.sh                 # si .github/workflows/ a changé
