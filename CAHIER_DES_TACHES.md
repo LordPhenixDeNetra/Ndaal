@@ -73,7 +73,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
-| J01 | Fondations du projet | 25 | 22 | 88 % | ~67 | En cours |
+| J01 | Fondations du projet | 25 | 23 | 92 % | ~67 | En cours |
 | J02 | Noyau de stockage | 26 | 0 | 0 % | ~106 | À faire |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **299** | **22** | **7 %** | **~1319** | |
+| **Total** | | **299** | **23** | **8 %** | **~1319** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -217,7 +217,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T01.21** — Suite de tests complète sous macOS et Windows en CI (implémentations d'E/S de repli, chemins, fins de ligne)
   - Estimation : S · Dépend de : T01.20, T01.07 · Exigences : ENF-PORT-02
   - Fin : `cargo nextest run` vert sur `macos-latest` et `windows-latest`, sans test ignoré propre à un système.
-- [ ] **T01.22** — Dockerfile en plusieurs étapes et `deploy/docker/compose.yaml` (nœud unique) ; construction et démarrage vérifiés en CI
+- [x] **T01.22** — Dockerfile en plusieurs étapes et `deploy/docker/compose.yaml` (nœud unique) ; construction et démarrage vérifiés en CI
   - Estimation : S · Dépend de : T01.12 · Exigences : EF-OPS-07, EF-OPS-12
   - Fin : `docker compose up` démarre un nœud dont `/health/ready` répond, sous Linux, macOS et Windows.
 - [x] **T01.23** — `ndaal-i18n` : chargement Fluent, choix de la langue (ENF-I18N-03), repli sur l'anglais, vérification de complétude en CI ; messages existants de la CLI en anglais et en français
