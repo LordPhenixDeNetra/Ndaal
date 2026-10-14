@@ -48,12 +48,13 @@ jobs:
       - name: Add the benchmark history
         if: github.event_name != 'pull_request'
         shell: bash
-        # The branch exists after the first nightly benchmark run.
+        # The branch exists after the first benchmark run (bench.yml).
         run: |
           if git fetch --depth 1 origin bench-data; then
             mkdir -p docs/book/html/bench
-            git --work-tree=docs/book/html/bench checkout FETCH_HEAD -- .
-            git reset --quiet
+            # git archive also handles a branch that is still empty (its first
+            # commit has no file), where checkout of "." would fail.
+            git archive --format=tar FETCH_HEAD | tar -x -C docs/book/html/bench
           else
             echo "no bench-data branch yet"
           fi
