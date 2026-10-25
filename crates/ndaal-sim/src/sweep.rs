@@ -59,6 +59,25 @@ pub fn sweep_with(
     failures
 }
 
+/// One result for a seed from the results of several scenarios: finished
+/// if all are, a fingerprint that depends on each, and the names of the
+/// scenarios that failed.
+pub fn combine(results: &[(&str, SeedResult)]) -> SeedResult {
+    let mut fingerprint = 0u64;
+    let mut failed = Vec::new();
+    for (name, result) in results {
+        fingerprint = fingerprint.rotate_left(17) ^ result.fingerprint;
+        if !result.finished {
+            failed.push(format!("{name}: {}", result.detail));
+        }
+    }
+    SeedResult {
+        finished: failed.is_empty(),
+        fingerprint,
+        detail: failed.join("; "),
+    }
+}
+
 /// `ping_pong` as a sweep result: finished with every reply.
 pub fn ping_pong_result(seed: u64, messages: u32) -> SeedResult {
     let report = ping_pong(seed, messages);
@@ -138,6 +157,18 @@ mod tests {
         let failures = sweep_with(0, 6, run, |failure| seen.borrow_mut().push(failure.seed));
         assert_eq!(*seen.borrow(), vec![0, 2, 4]);
         assert_eq!(failures.len(), 3);
+    }
+
+    #[test]
+    fn sweep_covers_both_scenarios() {
+        let ok = result(true, 1);
+        let failed = result(false, 2);
+        let both = super::combine(&[("ping_pong", ok.clone()), ("cross_core", failed)]);
+        assert!(!both.finished);
+        assert_eq!(both.detail, "cross_core: stuck");
+        let clean = super::combine(&[("ping_pong", ok.clone()), ("cross_core", ok)]);
+        assert!(clean.finished && clean.detail.is_empty());
+        assert_ne!(clean.fingerprint, both.fingerprint);
     }
 
     #[test]

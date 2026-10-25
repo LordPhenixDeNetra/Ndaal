@@ -74,7 +74,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          title="sim: failing seeds in ping_pong"
+          title="sim: failing seeds"
           failing="$(grep -c '^seed ' sweep.txt || true)"
           # grep -m, not head: head would close the pipe early and, under
           # pipefail, SIGPIPE on grep would stop the step before the ticket.
