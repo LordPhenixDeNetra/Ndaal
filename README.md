@@ -113,7 +113,7 @@ Voir [CONTRIBUTING.md](CONTRIBUTING.md) (certificat d'origine, tests, vérificat
 
 [Apache 2.0](LICENSE) (voir [ADR-001](DECISIONS.md#adr-001--licence-apache-20)).
 
-<!-- 
+<!--
 
 
 docker compose -f deploy/docker/compose.yaml up -d --build --wait
