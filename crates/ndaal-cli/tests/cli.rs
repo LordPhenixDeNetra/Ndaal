@@ -162,6 +162,19 @@ fn configuration_errors_exit_with_code_2_and_name_the_key() {
 }
 
 #[test]
+fn runtime_values_are_explained_in_french() {
+    for (set, expected) in [
+        ("runtime.cores.shard=x", "auto ou un nombre"),
+        ("runtime.idle_spin=1h", "une dur\u{e9}e"),
+    ] {
+        let output = ndaal(&["--set", set, "config", "show"], Some("fr"), &[]);
+        let text = stderr(&output);
+        assert_eq!(code(&output), Some(2), "{set}");
+        assert!(text.contains(expected), "{set}: {text}");
+    }
+}
+
+#[test]
 fn configuration_errors_are_translated() {
     let output = ndaal(
         &["--set", "log.level=loud", "config", "show"],

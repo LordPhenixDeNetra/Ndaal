@@ -15,6 +15,7 @@ publish = false
 [workspace.dependencies]
 # Centralized dependency versions (T01.01). Exact versions are pinned by Cargo.lock.
 axum = { version = "0.8.9", default-features = false, features = ["http1", "tokio"] }
+core_affinity = "0.8.3"
 criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
 clap = { version = "4.6.7", default-features = false, features = ["std"] }
 fluent-bundle = "0.16.0"
@@ -25,8 +26,10 @@ ndaal-fuzz = { path = "crates/ndaal-fuzz", version = "0.0.0" }
 ndaal-i18n = { path = "crates/ndaal-i18n", version = "0.0.0" }
 ndaal-io = { path = "crates/ndaal-io", version = "0.0.0" }
 ndaal-observe = { path = "crates/ndaal-observe", version = "0.0.0" }
+ndaal-runtime = { path = "crates/ndaal-runtime", version = "0.0.0" }
 ndaal-proto-http = { path = "crates/ndaal-proto-http", version = "0.0.0" }
 proptest = "1.12.0"
+rtrb = "0.4.0"
 sys-locale = "0.3.2"
 tempfile = "3.27.0"
 serde_json = "1.0.154"

@@ -154,6 +154,8 @@ fn expected_text(expected: Expected, t: &Translator) -> String {
         }
         Expected::Value(Kind::Addr) => t.t("cli-expected-addr"),
         Expected::Value(Kind::Bool) => t.t("cli-expected-bool"),
+        Expected::Value(Kind::Duration) => t.t("cli-expected-duration"),
+        Expected::Value(Kind::Count) => t.t("cli-expected-count"),
         Expected::Value(Kind::LogLevel) => t.t_args(
             "cli-expected-log-level",
             &[("levels", &LOG_LEVELS.join(", "))],
