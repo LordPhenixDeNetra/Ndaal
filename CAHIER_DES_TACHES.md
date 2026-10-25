@@ -74,7 +74,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
 | J01 | Fondations du projet | 26 | 26 | 100 % | ~68 | Terminé |
-| J02 | Noyau de stockage | 26 | 0 | 0 % | ~106 | À faire |
+| J02 | Noyau de stockage | 26 | 2 | 8 % | ~106 | En cours |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
 | J05 | Moteur vectoriel | 27 | 0 | 0 % | ~126 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **300** | **26** | **9 %** | **~1320** | |
+| **Total** | | **300** | **28** | **9 %** | **~1320** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -243,10 +243,10 @@ Chaque jalon produit un **résultat utilisable** :
 
 **Critères de sortie** : 0 perte d'écriture acquittée sur 10 000 graines de simulation avec coupures ; reprise vérifiée après coupure pendant un point de contrôle ; latence `fdatasync` groupée mesurée.
 
-- [ ] **T02.01** — `ndaal-runtime` : un runtime `tokio` `current_thread` par cœur, épinglage, cycle de vie
+- [x] **T02.01** — `ndaal-runtime` : un runtime `tokio` `current_thread` par cœur, épinglage, cycle de vie
   - Estimation : M · Dépend de : T01.07 · Exigences : ADR-003
   - Fin : N threads épinglés démarrent et s'arrêtent proprement ; fonctionne sans épinglage sur macOS/Windows.
-- [ ] **T02.02** — Classes de charge (`shard`, `vector`, `transfer`, `background`, `io`) et attribution des cœurs (table par défaut + configuration)
+- [x] **T02.02** — Classes de charge (`shard`, `vector`, `transfer`, `background`, `io`) et attribution des cœurs (table par défaut + configuration)
   - Estimation : M · Dépend de : T02.01 · Exigences : ENF-ISO-01/02, ENF-RES-02
   - Fin : la table d'attribution de l'architecture (§4.1) est respectée de 2 à 64 cœurs (test unitaire).
 - [ ] **T02.03** — Files SPSC bornées entre cœurs et messagerie requête/réponse
