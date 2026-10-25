@@ -228,13 +228,22 @@ Répartition par défaut (modifiable par `runtime.cores.*`) :
 | 16 | 6 | 6 | 2 | 1 | 1 |
 | 64 | 20 | 32 | 6 | 4 | 2 |
 
+Entre deux lignes de la table, chaque classe est interpolée linéairement entre ses lignes voisines. Au-delà de 64 cœurs, les proportions de la ligne 64 sont conservées. Avec 1 cœur, toutes les classes le partagent. Les parts sont arrondies par la méthode du plus grand reste (somme exacte, ex æquo départagés dans l'ordre `shard`, `vector`, `transfer`, `background`, `io`). Une classe sans cœur dédié est placée sur le premier cœur de la première classe de sa chaîne de repli qui en a :
+
+- `vector` → `shard` ;
+- `transfer` → `vector` → `shard` ;
+- `background` → `transfer` → `vector` → `shard` ;
+- `io` → `shard`.
+
+Cette chaîne reproduit les lignes 2, 4 et 8 de la table et s'applique aussi quand `runtime.cores.<classe>` impose des nombres (les classes restées à `auto` se répartissent alors le reste au prorata de la table). Implémentation : `ndaal_runtime::layout::assign`.
+
 Quand deux classes partagent un cœur, le runtime de ce cœur utilise deux files de tâches avec **priorité stricte et budget** : la classe prioritaire est toujours servie d'abord, la classe secondaire reçoit au minimum 10 % du temps pour éviter la famine.
 
 ### 4.2 Connexions et messagerie inter-cœurs
 
 - Les sockets d'écoute utilisent `SO_REUSEPORT` : chaque cœur `shard` accepte ses propres connexions RESP. Les connexions S3 et HTTP sont acceptées par les cœurs `transfer` (S3) et `shard` (HTTP léger).
 - Une connexion reste sur le cœur qui l'a acceptée. Si une commande concerne une partition possédée par un autre cœur, elle est **transmise par message** au cœur propriétaire puis la réponse revient.
-- Chaque paire de cœurs dispose d'une **file SPSC** (un producteur, un consommateur) sans verrou, bornée. Un cœur vérifie ses files entrantes à chaque tour de boucle.
+- Chaque paire de cœurs dispose, dans chaque sens, de deux **files SPSC** (un producteur, un consommateur) sans verrou et bornées : une pour les messages et les requêtes, une pour les réponses. Une requête réserve sa place de réponse avant de partir : une réponse trouve toujours de la place, et deux cœurs qui s'envoient des requêtes ne peuvent pas se bloquer. Un cœur inactif surveille ses files pendant `runtime.idle_spin`, puis s'endort jusqu'à ce qu'un émetteur le réveille (`ndaal_runtime::mailbox`).
 - Les commandes multi-clés touchant plusieurs partitions (`MGET` sur un espace de noms réparti) sont découpées, envoyées en parallèle, puis les réponses sont réassemblées dans l'ordre.
 
 ```
