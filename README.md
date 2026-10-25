@@ -112,3 +112,12 @@ Voir [CONTRIBUTING.md](CONTRIBUTING.md) (certificat d'origine, tests, vérificat
 ## Licence
 
 [Apache 2.0](LICENSE) (voir [ADR-001](DECISIONS.md#adr-001--licence-apache-20)).
+
+<!-- 
+
+
+docker compose -f deploy/docker/compose.yaml up -d --build --wait
+curl http://127.0.0.1:8080/health/ready
+docker compose -f deploy/docker/compose.yaml down -v
+
+ -->
