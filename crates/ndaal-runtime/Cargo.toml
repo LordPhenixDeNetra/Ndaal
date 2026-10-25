@@ -8,5 +8,30 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
+[features]
+# Exposes mailbox::contract, run by ndaal-runtime's and ndaal-sim's tests.
+test-contract = []
+
+[dependencies]
+core_affinity.workspace = true
+ndaal-common.workspace = true
+ndaal-io.workspace = true
+ndaal-observe.workspace = true
+rtrb.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tokio = { workspace = true, features = ["rt", "sync", "macros", "time"] }
+
+[dev-dependencies]
+core_affinity.workspace = true
+criterion.workspace = true
+# Itself with the contract checks, for its own tests.
+ndaal-runtime = { workspace = true, features = ["test-contract"] }
+tokio = { workspace = true, features = ["rt", "sync", "macros", "time"] }
+
+[[bench]]
+name = "round_trip"
+harness = false
+
 [lints]
 workspace = true
