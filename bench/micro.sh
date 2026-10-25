@@ -6,5 +6,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 output="${1:-bench-output.txt}"
+# A fresh criterion directory: a baseline restored half-way by the CI cache
+# (base/ without sample.json) makes criterion print an error in place of the
+# result. The history lives in the bench-data branch, not in baselines.
+CRITERION_HOME="$(mktemp -d)"
+export CRITERION_HOME
 # --bench '*': only the criterion targets; libtest harnesses reject the option.
 cargo bench --workspace --bench '*' -- --output-format bencher | tee "$output"

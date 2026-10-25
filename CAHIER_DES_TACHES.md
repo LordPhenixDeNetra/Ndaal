@@ -73,7 +73,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
-| J01 | Fondations du projet | 26 | 25 | 96 % | ~68 | En cours |
+| J01 | Fondations du projet | 26 | 26 | 100 % | ~68 | Terminé |
 | J02 | Noyau de stockage | 26 | 0 | 0 % | ~106 | À faire |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **300** | **25** | **8 %** | **~1320** | |
+| **Total** | | **300** | **26** | **9 %** | **~1320** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -229,7 +229,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T01.25** — Versions figées des outils (`rust-toolchain.toml`, `scripts/tools.versions`, installation identique en local et en CI) et script `scripts/check-linux.sh` (clippy et tests compilés pour Linux dans le conteneur Rust figé, depuis macOS ou Windows)
   - Estimation : S · Dépend de : T01.03 · Exigences : CLAUDE.md §4.12 et §11, ENF-PORT-02
   - Fin : la CI et le poste de développement utilisent les mêmes versions ; sous Windows, `check-linux.sh` signale une erreur volontaire placée dans du code `#[cfg(target_os = "linux")]`.
-- [ ] **T01.26** — `nightly.yml` : simulation déterministe nocturne (≥ 10 000 graines, plage différente chaque nuit), commande `ndaal-sim sweep`, ticket avec les commandes de rejeu en cas de graine fautive
+- [x] **T01.26** — `nightly.yml` : simulation déterministe nocturne (≥ 10 000 graines, plage différente chaque nuit), commande `ndaal-sim sweep`, ticket avec les commandes de rejeu en cas de graine fautive
   - Estimation : S · Dépend de : T01.09, T01.20 · Exigences : STRATEGIE §13.2 et §14 (critère 2)
   - Fin : trois nuits consécutives vertes sur `main`.
 
@@ -1203,7 +1203,7 @@ Chaque jalon produit un **résultat utilisable** :
 
 | Jalon | Date de clôture | Résumé | Résultats des bancs | Écarts / limitations | Lien |
 |---|---|---|---|---|---|
-| J01 | | | | | |
+| J01 | 2026-10-25 | Workspace, CI sur Linux (x86_64, arm64), macOS et Windows, hygiène et lint des effets de bord, `ndaal-io` (réel et simulé), simulateur déterministe, observabilité, CLI traduite, configuration, serveur de santé et métriques, image Docker, fuzzing, micro-bancs, banc comparatif, site de documentation, simulation nocturne | Micro-bancs (machines partagées de GitHub, 21/10) : `varint/encode` 5 037 ns et `varint/decode` 5 751 ns pour 1 024 valeurs, `crockford/decode` 167 164 ns ; banc comparatif Valkey contre Valkey dans la tolérance 12 nuits sur 12 ; simulation nocturne 10 000 graines sans échec 11 nuits de suite (15 au 25/10) ; fuzzing nocturne de `common_codec` vert 11 nuits de suite | Bancs sur machines partagées en attendant D-05 (P-42, P-50) ; essai Docker sous macOS non fait (P-49) ; banc nocturne en échec du 14 au 24/10 sauf le 21 (référence criterion périmée dans le cache, corrigée à la clôture) ; aucun banc ENF-PERF ni comparatif de Ndaal avant J03 | [Site](https://lordphenixdenetra.github.io/Ndaal/) |
 | J02 | | | | | |
 | J03 | | | | | |
 | J04 | | | | | |
