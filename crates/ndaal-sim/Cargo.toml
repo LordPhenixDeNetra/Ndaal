@@ -10,6 +10,11 @@ publish.workspace = true
 
 [dependencies]
 ndaal-io.workspace = true
+ndaal-observe.workspace = true
+ndaal-runtime.workspace = true
+
+[dev-dependencies]
+ndaal-runtime = { workspace = true, features = ["test-contract"] }
 
 [lints]
 workspace = true
