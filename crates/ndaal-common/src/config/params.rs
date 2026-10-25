@@ -25,6 +25,10 @@ pub enum Kind {
     LogLevel,
     /// `true` or `false`.
     Bool,
+    /// `0`, or an integer followed by `us`, `ms` or `s` (at most 10 s).
+    Duration,
+    /// `auto` or a number of cores from 0 to 4096.
+    Count,
 }
 
 impl Kind {
@@ -37,6 +41,8 @@ impl Kind {
             Self::Addr => "address",
             Self::LogLevel => "log-level",
             Self::Bool => "bool",
+            Self::Duration => "duration",
+            Self::Count => "count",
         }
     }
 
@@ -49,6 +55,8 @@ impl Kind {
             Self::Addr => value.parse::<SocketAddr>().is_ok(),
             Self::LogLevel => is_log_directive(value),
             Self::Bool => value == "true" || value == "false",
+            Self::Duration => super::runtime::parse_duration(value).is_some(),
+            Self::Count => super::runtime::parse_count(value).is_some(),
         }
     }
 
@@ -61,6 +69,8 @@ impl Kind {
             Self::Addr => "an address such as 127.0.0.1:8080".into(),
             Self::LogLevel => format!("a level ({}) or target=level list", LOG_LEVELS.join(", ")),
             Self::Bool => "true or false".into(),
+            Self::Duration => "a duration such as 0, 250us, 10ms or 2s (at most 10s)".into(),
+            Self::Count => format!("auto or a number from 0 to {}", super::runtime::MAX_COUNT),
         }
     }
 }
@@ -128,6 +138,54 @@ pub const PARAMS: &[Param] = &[
         default: "json",
         help: "log format",
     },
+    Param {
+        key: "runtime.idle_spin",
+        kind: Kind::Duration,
+        default: "50us",
+        help: "how long an idle core polls its queues before sleeping",
+    },
+    Param {
+        key: "runtime.cores.total",
+        kind: Kind::Count,
+        default: "auto",
+        help: "cores used by the node (auto: the cores allowed to the process)",
+    },
+    Param {
+        key: "runtime.cores.shard",
+        kind: Kind::Count,
+        default: "auto",
+        help: "cores of class shard (partitions, key-value, transactions)",
+    },
+    Param {
+        key: "runtime.cores.vector",
+        kind: Kind::Count,
+        default: "auto",
+        help: "cores of class vector (search, index building)",
+    },
+    Param {
+        key: "runtime.cores.transfer",
+        kind: Kind::Count,
+        default: "auto",
+        help: "cores of class transfer (object streams)",
+    },
+    Param {
+        key: "runtime.cores.background",
+        kind: Kind::Count,
+        default: "auto",
+        help: "cores of class background (compaction, maintenance)",
+    },
+    Param {
+        key: "runtime.cores.io",
+        kind: Kind::Count,
+        default: "auto",
+        help: "cores of class io (disk operations without io_uring)",
+    },
+    Param {
+        key: "runtime.cores.pin",
+        kind: Kind::Bool,
+        default: "true",
+        help: "pin each core thread to its CPU (ignored on macOS)",
+    },
 ];
 
 /// The parameter named `key`.
@@ -136,9 +194,10 @@ pub(super) fn find(key: &str) -> Option<&'static Param> {
 }
 
 /// Environment variable of a parameter: `node.data_dir` is
-/// `NDAAL_NODE__DATA_DIR` (EF-GEN-05).
+/// `NDAAL_NODE__DATA_DIR`, `runtime.cores.pin` is
+/// `NDAAL_RUNTIME__CORES__PIN` (EF-GEN-05).
 pub fn env_name(key: &str) -> String {
-    format!("NDAAL_{}", key.to_ascii_uppercase().replacen('.', "__", 1))
+    format!("NDAAL_{}", key.to_ascii_uppercase().replace('.', "__"))
 }
 
 /// The parameter key of an environment variable, or `None` when the variable
@@ -146,7 +205,7 @@ pub fn env_name(key: &str) -> String {
 pub(super) fn env_key(name: &str) -> Option<String> {
     let rest = name.strip_prefix("NDAAL_")?;
     rest.contains("__")
-        .then(|| rest.to_ascii_lowercase().replacen("__", ".", 1))
+        .then(|| rest.to_ascii_lowercase().replace("__", "."))
 }
 
 /// A log level or a comma-separated list of levels and `target=level`

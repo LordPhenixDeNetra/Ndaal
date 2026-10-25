@@ -6,14 +6,18 @@
 //! Every value is validated and an unknown key is an error, so a typo never
 //! silently falls back to a default.
 
+mod file;
 mod params;
+mod runtime;
 
 use std::collections::BTreeMap;
 use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
+pub use file::render;
 pub use params::{Kind, LOG_LEVELS, PARAMS, Param, env_name, is_log_directive, reference};
+pub use runtime::{CoreCount, CoresConfig, RuntimeConfig};
 
 use crate::error::{Classify, ErrorClass};
 
@@ -190,6 +194,8 @@ pub struct Config {
     pub auth: AuthConfig,
     /// Section `[log]`.
     pub log: LogConfig,
+    /// Section `[runtime]`.
+    pub runtime: RuntimeConfig,
 }
 
 /// Resolved values: the raw text of each parameter and where it came from.
@@ -205,7 +211,7 @@ pub fn load(sources: &Sources<'_>) -> Result<Config, ConfigError> {
         set(&mut values, key, value.clone(), Origin::Default)?;
     }
     if let Some(text) = sources.file {
-        for (key, value) in file_entries(text)? {
+        for (key, value) in file::file_entries(text)? {
             set(&mut values, &key, value, Origin::File)?;
         }
     }
@@ -248,62 +254,10 @@ fn invalid_value(key: &str, origin: Origin) -> ConfigError {
     invalid(key, origin, Expected::Value(kind))
 }
 
-/// `(section.key, value)` pairs of the file. Scalars (`42`, `true`, `0.5`)
-/// are read as their text, then checked by the parameter's kind like the
-/// environment and the command line, which only carry text.
-fn file_entries(text: &str) -> Result<Vec<(String, String)>, ConfigError> {
-    let table: toml::Table = text
-        .parse()
-        .map_err(|e: toml::de::Error| ConfigError::Syntax {
-            message: e.to_string(),
-        })?;
-    let mut entries = Vec::new();
-    for (section, value) in table {
-        let is_section = PARAMS
-            .iter()
-            .any(|p| p.key.split('.').next() == Some(&section));
-        if !is_section {
-            return Err(unknown_in_file(&section));
-        }
-        let toml::Value::Table(keys) = value else {
-            return Err(invalid(&section, Origin::File, Expected::Table));
-        };
-        for (name, value) in keys {
-            let key = format!("{section}.{name}");
-            if params::find(&key).is_none() {
-                return Err(unknown_in_file(&key));
-            }
-            let text = match value {
-                toml::Value::String(text) => text,
-                toml::Value::Integer(n) => n.to_string(),
-                toml::Value::Float(x) => x.to_string(),
-                toml::Value::Boolean(b) => b.to_string(),
-                toml::Value::Datetime(d) => d.to_string(),
-                toml::Value::Array(_) | toml::Value::Table(_) => {
-                    return Err(invalid(&key, Origin::File, Expected::Scalar));
-                }
-            };
-            entries.push((key, text));
-        }
-    }
-    Ok(entries)
-}
-
-fn unknown_in_file(key: &str) -> ConfigError {
-    ConfigError::Unknown {
-        key: key.to_owned(),
-        origin: Origin::File,
-    }
-}
-
 fn build(values: &Values) -> Result<Config, ConfigError> {
     // Every value passed `Kind::check`; the conversions below still return
     // errors rather than assume it.
-    let get = |key: &'static str| {
-        values
-            .get(key)
-            .map_or(("", Origin::Default), |(v, o)| (v.as_str(), *o))
-    };
+    let get = |key| value(values, key);
     let (listen, listen_origin) = get("http.listen");
     let (lang, lang_origin) = get("node.lang");
     let (format, format_origin) = get("log.format");
@@ -343,6 +297,41 @@ fn build(values: &Values) -> Result<Config, ConfigError> {
                 _ => return Err(invalid_value("log.format", format_origin)),
             },
         },
+        runtime: build_runtime(values)?,
+    })
+}
+
+/// Text and origin of `key`; every key of [`PARAMS`] has a default.
+fn value<'a>(values: &'a Values, key: &str) -> (&'a str, Origin) {
+    values
+        .get(key)
+        .map_or(("", Origin::Default), |(v, o)| (v.as_str(), *o))
+}
+
+fn build_runtime(values: &Values) -> Result<RuntimeConfig, ConfigError> {
+    let get = |key| value(values, key);
+    let count = |key: &'static str| {
+        let (text, origin) = get(key);
+        runtime::parse_count(text).ok_or_else(|| invalid_value(key, origin))
+    };
+    let (spin, spin_origin) = get("runtime.idle_spin");
+    let (pin, pin_origin) = get("runtime.cores.pin");
+    Ok(RuntimeConfig {
+        cores: CoresConfig {
+            total: count("runtime.cores.total")?,
+            shard: count("runtime.cores.shard")?,
+            vector: count("runtime.cores.vector")?,
+            transfer: count("runtime.cores.transfer")?,
+            background: count("runtime.cores.background")?,
+            io: count("runtime.cores.io")?,
+            pin: match pin {
+                "true" => true,
+                "false" => false,
+                _ => return Err(invalid_value("runtime.cores.pin", pin_origin)),
+            },
+        },
+        idle_spin: runtime::parse_duration(spin)
+            .ok_or_else(|| invalid_value("runtime.idle_spin", spin_origin))?,
     })
 }
 
@@ -371,24 +360,25 @@ pub fn entries(config: &Config) -> Vec<(&'static str, String)> {
         ),
         ("log.level", config.log.level.clone()),
         ("log.format", format.to_owned()),
+        (
+            "runtime.idle_spin",
+            runtime::format_duration(config.runtime.idle_spin),
+        ),
     ]
+    .into_iter()
+    .chain(runtime_cores_entries(&config.runtime.cores))
+    .collect()
 }
 
-/// `config` as a TOML file (`ndaal config show`); [`load`] reads it back to
-/// the same configuration.
-pub fn render(config: &Config) -> String {
-    let mut out = String::new();
-    let mut current = "";
-    for (key, value) in entries(config) {
-        let (section, name) = key.split_once('.').unwrap_or(("", key));
-        if section != current {
-            if !current.is_empty() {
-                out.push('\n');
-            }
-            out.push_str(&format!("[{section}]\n"));
-            current = section;
-        }
-        out.push_str(&format!("{name} = {}\n", toml::Value::String(value)));
-    }
-    out
+fn runtime_cores_entries(cores: &CoresConfig) -> Vec<(&'static str, String)> {
+    let count = runtime::format_count;
+    vec![
+        ("runtime.cores.total", count(cores.total)),
+        ("runtime.cores.shard", count(cores.shard)),
+        ("runtime.cores.vector", count(cores.vector)),
+        ("runtime.cores.transfer", count(cores.transfer)),
+        ("runtime.cores.background", count(cores.background)),
+        ("runtime.cores.io", count(cores.io)),
+        ("runtime.cores.pin", cores.pin.to_string()),
+    ]
 }
