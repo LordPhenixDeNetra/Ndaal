@@ -699,9 +699,14 @@ dependencies = [
 name = "ndaal-io"
 version = "0.0.0"
 dependencies = [
+ "core_affinity",
  "getrandom",
+ "libc",
+ "ndaal-observe",
  "proptest",
+ "rtrb",
  "tempfile",
+ "thiserror",
  "tokio",
 ]
 

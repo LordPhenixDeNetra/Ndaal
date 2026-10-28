@@ -9,6 +9,15 @@ use std::path::Path;
 
 use ndaal_io::{Disk, File, OpenOptions};
 
+/// A fresh directory under `NDAAL_TEST_DIR` when set (the XFS mount of the
+/// CI, T02.06), under the system temporary directory otherwise.
+pub fn test_dir() -> tempfile::TempDir {
+    match std::env::var_os("NDAAL_TEST_DIR") {
+        Some(root) => tempfile::tempdir_in(root).expect("tempdir in NDAAL_TEST_DIR"),
+        None => tempfile::tempdir().expect("tempdir"),
+    }
+}
+
 pub const CREATE: OpenOptions = OpenOptions {
     create: true,
     truncate: false,
@@ -23,6 +32,7 @@ pub async fn disk_contract<D: Disk>(disk: &D, root: &Path) {
     open_missing_without_create_is_not_found(disk, root).await;
     rename_remove_and_sorted_listing(disk, root).await;
     set_len_truncates_and_extends(disk, root).await;
+    allocate_reserves_without_changing_content(disk, root).await;
     truncate_on_open(disk, root).await;
     rename_over_existing_target(disk, root).await;
     missing_files_are_not_found(disk, root).await;
@@ -134,6 +144,26 @@ async fn set_len_truncates_and_extends<D: Disk>(disk: &D, root: &Path) {
     let mut buf = [0xFFu8; 4];
     assert_eq!(file.read_at(&mut buf, 0).await.expect("read"), 4);
     assert_eq!(&buf, b"ab\0\0");
+}
+
+async fn allocate_reserves_without_changing_content<D: Disk>(disk: &D, root: &Path) {
+    let file = disk.open(&root.join("alloc"), CREATE).await.expect("open");
+    file.write_all_at(b"0123456789", 0).await.expect("write");
+    file.allocate(8192).await.expect("allocate");
+    assert_eq!(file.len().await.expect("len"), 8192);
+    let mut buf = vec![0xFFu8; 8192];
+    assert_eq!(file.read_at(&mut buf, 0).await.expect("read"), 8192);
+    assert_eq!(&buf[..10], b"0123456789");
+    assert!(
+        buf[10..].iter().all(|&b| b == 0),
+        "allocated bytes are zeros"
+    );
+    file.allocate(4).await.expect("allocate less");
+    assert_eq!(
+        file.len().await.expect("len"),
+        8192,
+        "allocate never truncates"
+    );
 }
 
 async fn truncate_on_open<D: Disk>(disk: &D, root: &Path) {

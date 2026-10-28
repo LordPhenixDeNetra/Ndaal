@@ -20,6 +20,7 @@ mod net;
 pub mod platform;
 pub mod real;
 mod rng;
+pub mod sched;
 pub mod sim;
 
 pub use clock::Clock;
