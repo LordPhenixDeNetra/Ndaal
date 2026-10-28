@@ -74,7 +74,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
 | J01 | Fondations du projet | 26 | 26 | 100 % | ~68 | Terminé |
-| J02 | Noyau de stockage | 26 | 2 | 8 % | ~106 | En cours |
+| J02 | Noyau de stockage | 26 | 4 | 15 % | ~106 | En cours |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
 | J05 | Moteur vectoriel | 27 | 0 | 0 % | ~126 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **300** | **28** | **9 %** | **~1320** | |
+| **Total** | | **300** | **30** | **10 %** | **~1320** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -255,10 +255,10 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T02.04** — Ordonnancement à deux files (priorité stricte + budget minimal) pour les cœurs partagés entre classes
   - Estimation : M · Dépend de : T02.02 · Exigences : ENF-ISO-02
   - Fin : test montrant que la classe secondaire reçoit ≥ 10 % du temps sous saturation de la classe principale.
-- [ ] **T02.05** — Ordonnanceur d'E/S par périphérique : classes de priorité, pondération, seaux à jetons, profondeur bornée
+- [x] **T02.05** — Ordonnanceur d'E/S par périphérique : classes de priorité, pondération, seaux à jetons, profondeur bornée
   - Estimation : L · Dépend de : T02.02, T01.07 · Exigences : ENF-ISO-01
   - Fin : en simulation, une rafale d'écritures `basse` ne retarde pas une lecture `haute` au-delà d'une borne configurée.
-- [ ] **T02.06** — Backend d'E/S « pool de threads » (`pread`, `pwrite`, `fdatasync`, `fallocate`)
+- [x] **T02.06** — Backend d'E/S « pool de threads » (`pread`, `pwrite`, `fdatasync`, `fallocate`)
   - Estimation : M · Dépend de : T02.05 · Exigences : ADR-016, ENF-PORT-03
   - Fin : suite de tests commune des backends réussie sur ext4 et XFS.
 - [ ] **T02.07** — `ndaal-wal` : format d'enregistrement, encodage/décodage, CRC32C masqué ([FORMATS §2](FORMATS_DE_DONNEES.md#2-journal-wal))
