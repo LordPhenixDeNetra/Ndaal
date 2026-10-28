@@ -74,6 +74,26 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Tests
         run: cargo nextest run --workspace
+      # T02.06: the disk backends pass their contract on ext4 (the runner's
+      # file system, above) and on XFS, mounted from a loop file here. A
+      # missing mkfs.xfs fails the step: never a silent skip.
+      - name: Disk contract on XFS
+        if: matrix.os == 'ubuntu-24.04'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v mkfs.xfs >/dev/null; then
+            sudo apt-get update -q
+            sudo apt-get install -y -q xfsprogs
+          fi
+          truncate -s 1G "$RUNNER_TEMP/xfs.img"
+          mkfs.xfs -q "$RUNNER_TEMP/xfs.img"
+          mkdir -p "$RUNNER_TEMP/xfs"
+          sudo mount -o loop "$RUNNER_TEMP/xfs.img" "$RUNNER_TEMP/xfs"
+          sudo chown "$(id -u):$(id -g)" "$RUNNER_TEMP/xfs"
+          test "$(stat -f -c %T "$RUNNER_TEMP/xfs")" = xfs
+          NDAAL_TEST_DIR="$RUNNER_TEMP/xfs" \
+            cargo nextest run -p ndaal-io --test real_disk --test real_pool
       - name: Benchmarks run once (they must keep working)
         if: runner.os == 'Linux'
         run: cargo bench --workspace --bench '*' -- --test
