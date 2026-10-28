@@ -13,3 +13,6 @@ CLAUDE.local.md
 
 # Results of the comparative benchmarks (bench/compare/)
 /bench-results/
+
+# Local knowledge graph of the repository (graphify), rebuilt on demand
+/graphify-out/
