@@ -166,6 +166,11 @@ fn runtime_values_are_explained_in_french() {
     for (set, expected) in [
         ("runtime.cores.shard=x", "auto ou un nombre"),
         ("runtime.idle_spin=1h", "une dur\u{e9}e"),
+        (
+            "io.background_bandwidth_share=1.5",
+            "un nombre de 0 \u{e0} 1",
+        ),
+        ("io.queue_depth=0", "un entier de 1 \u{e0} 1024"),
     ] {
         let output = ndaal(&["--set", set, "config", "show"], Some("fr"), &[]);
         let text = stderr(&output);

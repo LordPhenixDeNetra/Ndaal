@@ -29,6 +29,10 @@ pub enum Kind {
     Duration,
     /// `auto` or a number of cores from 0 to 4096.
     Count,
+    /// A share from 0 to 1 with at most 6 decimals: `0`, `0.3`, `1`.
+    Ratio,
+    /// An integer from the first bound to the second, both included.
+    Range(u32, u32),
 }
 
 impl Kind {
@@ -43,6 +47,8 @@ impl Kind {
             Self::Bool => "bool",
             Self::Duration => "duration",
             Self::Count => "count",
+            Self::Ratio => "ratio",
+            Self::Range(..) => "integer",
         }
     }
 
@@ -57,6 +63,8 @@ impl Kind {
             Self::Bool => value == "true" || value == "false",
             Self::Duration => super::runtime::parse_duration(value).is_some(),
             Self::Count => super::runtime::parse_count(value).is_some(),
+            Self::Ratio => super::io::parse_ratio(value).is_some(),
+            Self::Range(min, max) => super::io::parse_range(value, min, max).is_some(),
         }
     }
 
@@ -71,6 +79,8 @@ impl Kind {
             Self::Bool => "true or false".into(),
             Self::Duration => "a duration such as 0, 250us, 10ms or 2s (at most 10s)".into(),
             Self::Count => format!("auto or a number from 0 to {}", super::runtime::MAX_COUNT),
+            Self::Ratio => "a number from 0 to 1 with at most 6 decimals, such as 0.3".into(),
+            Self::Range(min, max) => format!("an integer from {min} to {max}"),
         }
     }
 }
@@ -185,6 +195,24 @@ pub const PARAMS: &[Param] = &[
         kind: Kind::Bool,
         default: "true",
         help: "pin each core thread to its CPU (ignored on macOS)",
+    },
+    Param {
+        key: "io.backend",
+        kind: Kind::Choice(super::io::BACKENDS),
+        default: "auto",
+        help: "disk backend; auto picks the best available (threads until io_uring)",
+    },
+    Param {
+        key: "io.queue_depth",
+        kind: Kind::Range(super::io::MIN_DEPTH, super::io::MAX_DEPTH),
+        default: "32",
+        help: "disk operations in flight per device, and I/O threads of the pool",
+    },
+    Param {
+        key: "io.background_bandwidth_share",
+        kind: Kind::Ratio,
+        default: "0.30",
+        help: "share of the measured disk bandwidth left to background work",
     },
 ];
 
