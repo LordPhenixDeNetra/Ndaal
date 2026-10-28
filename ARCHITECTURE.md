@@ -172,7 +172,8 @@ ndaal/
 ```mermaid
 flowchart BT
     common[ndaal-common]
-    io[ndaal-io] --> common
+    observe[ndaal-observe] --> common
+    io[ndaal-io] --> observe
     runtime[ndaal-runtime] --> io
     wal[ndaal-wal] --> io
     kv[ndaal-kv] --> common
@@ -262,6 +263,15 @@ Toutes les E/S disque passent par un **ordonnanceur par périphérique** (`ndaal
 - pondération : à chaque tour, la file `critique` est vidée, puis les autres reçoivent des parts proportionnelles (par défaut 50/25/15/10) ;
 - **seau à jetons** par classe pour limiter la bande passante des tâches de fond (par défaut 30 % de la bande passante mesurée du disque, réduite automatiquement si la latence des E/S `haute` dépasse sa cible) ;
 - profondeur de file bornée par périphérique pour éviter qu'une rafale d'écritures massives ne retarde une lecture urgente dans la file matérielle.
+
+Mise en œuvre (J02-B1, T02.05 et T02.06) :
+
+- `sched::Scheduler` est une **machine à états pure** : le temps est un paramètre, et le même code sert le pool réel et le périphérique simulé (`sim::SimDevice`), ce qui permet de vérifier la borne de latence en simulation déterministe (scénario `io_priority`).
+- Les parts se font par **tourniquet à déficit en octets** : le quantum vaut poids × 4 Kio par tour, une opération sans taille compte pour 4 Kio, et une classe vide ne reçoit pas de quantum (aucun crédit d'avance).
+- Le **seau du fond** est rempli à `io.background_bandwidth_share` × la bande passante mesurée (octets servis par seconde de périphérique occupé, moyenne glissante sur des fenêtres de 100 ms), et sa capacité vaut 100 ms de ce débit. Il peut descendre sous zéro : une opération plus grosse que le seau passe, puis le fond attend d'avoir remboursé. La réduction automatique selon la latence des lectures `haute` viendra avec les bancs d'isolation de J07.
+- **Pool réel** (`real::IoPool`) : un thread répartiteur par périphérique tient l'ordonnanceur. Chaque cœur dépose ses demandes sans verrou, dans une file `rtrb` bornée par classe (256 demandes). Le répartiteur garde au plus 64 × `io.queue_depth` opérations en attente par classe et cesse de lire cette classe au-delà : une file pleine répond « occupé » (`WouldBlock`), et un fond bridé par son seau ne retient jamais les autres classes. Il confie le travail à `io.queue_depth` threads d'E/S, épinglés sur les cœurs `io`. À l'arrêt, les opérations en attente échouent (`Interrupted`) et celles en cours se terminent, en 10 s au plus.
+- `real::PoolDisk` passe par le pool, avec une classe donnée à l'ouverture du fichier. Renommer, supprimer, lister et synchroniser un dossier passent en classe `critical`. `real::RealDisk` reste sur les threads bloquants de tokio pour la CLI et les outils.
+- `File::allocate` réserve l'espace sans changer le contenu : `fallocate` sous Linux, repli sur l'extension du fichier ailleurs.
 
 Deux implémentations ([ADR-016](DECISIONS.md)) :
 
