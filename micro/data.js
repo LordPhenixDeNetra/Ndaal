@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793089655867,
+  "lastUpdate": 1793178330194,
   "repoUrl": "https://github.com/LordPhenixDeNetra/Ndaal",
   "entries": {
     "micro": [
@@ -171,6 +171,52 @@ window.BENCHMARK_DATA = {
             "name": "runtime/round_trip",
             "value": 1919,
             "range": "± 1",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "LordPhenixDeNetra",
+            "username": "LordPhenixDeNetra",
+            "email": "69590712+LordPhenixDeNetra@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "MOUSSA THIOR",
+            "username": "LordPhenixDeNetra",
+            "email": "69590712+LordPhenixDeNetra@users.noreply.github.com"
+          },
+          "id": "213a3a13fa96b5b0fc23e2181664a38483de6b6d",
+          "message": "docs: check off T02.05 and T02.06\n\nCI green on pull request 22, including the disk contract on XFS.\n\nSigned-off-by: LordPhenixDeNetra <69590712+LordPhenixDeNetra@users.noreply.github.com>",
+          "timestamp": "2026-10-28T04:07:34Z",
+          "url": "https://github.com/LordPhenixDeNetra/Ndaal/commit/213a3a13fa96b5b0fc23e2181664a38483de6b6d"
+        },
+        "date": 1793178329531,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "varint/encode",
+            "value": 3619,
+            "range": "± 66",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "varint/decode",
+            "value": 4051,
+            "range": "± 210",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "crockford/decode",
+            "value": 178696,
+            "range": "± 4991",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "runtime/round_trip",
+            "value": 1280,
+            "range": "± 10",
             "unit": "ns/iter"
           }
         ]
