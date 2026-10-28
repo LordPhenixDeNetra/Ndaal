@@ -35,15 +35,7 @@ impl Disk for RealDisk {
 
     async fn open(&self, path: &Path, options: OpenOptions) -> io::Result<RealFile> {
         let path = path.to_owned();
-        let file = blocking(move || {
-            std::fs::OpenOptions::new()
-                .read(true)
-                .write(!options.read_only)
-                .create(options.create)
-                .truncate(options.truncate)
-                .open(path)
-        })
-        .await?;
+        let file = blocking(move || open_blocking(&path, options)).await?;
         Ok(RealFile {
             file: Arc::new(file),
         })
@@ -66,14 +58,7 @@ impl Disk for RealDisk {
 
     async fn list_dir(&self, path: &Path) -> io::Result<Vec<PathBuf>> {
         let path = path.to_owned();
-        blocking(move || {
-            let mut entries = std::fs::read_dir(path)?
-                .map(|entry| entry.map(|e| e.path()))
-                .collect::<io::Result<Vec<_>>>()?;
-            entries.sort();
-            Ok(entries)
-        })
-        .await
+        blocking(move || list_dir_blocking(&path)).await
     }
 
     async fn sync_dir(&self, dir: &Path) -> io::Result<()> {
@@ -82,14 +67,32 @@ impl Disk for RealDisk {
     }
 }
 
+pub(super) fn open_blocking(path: &Path, options: OpenOptions) -> io::Result<std::fs::File> {
+    std::fs::OpenOptions::new()
+        .read(true)
+        .write(!options.read_only)
+        .create(options.create)
+        .truncate(options.truncate)
+        .open(path)
+}
+
+/// Entries of `path`, sorted.
+pub(super) fn list_dir_blocking(path: &Path) -> io::Result<Vec<PathBuf>> {
+    let mut entries = std::fs::read_dir(path)?
+        .map(|entry| entry.map(|e| e.path()))
+        .collect::<io::Result<Vec<_>>>()?;
+    entries.sort();
+    Ok(entries)
+}
+
 #[cfg(unix)]
-fn sync_dir_blocking(dir: &Path) -> io::Result<()> {
+pub(super) fn sync_dir_blocking(dir: &Path) -> io::Result<()> {
     std::fs::File::open(dir)?.sync_all()
 }
 
 /// Windows has no directory fsync; NTFS journals metadata itself.
 #[cfg(not(unix))]
-fn sync_dir_blocking(_dir: &Path) -> io::Result<()> {
+pub(super) fn sync_dir_blocking(_dir: &Path) -> io::Result<()> {
     Ok(())
 }
 
@@ -128,10 +131,56 @@ impl File for RealFile {
         let file = Arc::clone(&self.file);
         blocking(move || file.set_len(len)).await
     }
+
+    async fn allocate(&self, len: u64) -> io::Result<()> {
+        let file = Arc::clone(&self.file);
+        blocking(move || allocate_blocking(&file, len)).await
+    }
+}
+
+/// `fallocate`: the blocks are reserved, so later writes cannot fail for
+/// lack of space. Falls back to [`extend_to`] on file systems without it.
+#[cfg(target_os = "linux")]
+pub(super) fn allocate_blocking(file: &std::fs::File, len: u64) -> io::Result<()> {
+    use std::os::fd::AsRawFd;
+    if len == 0 {
+        // fallocate refuses an empty range (EINVAL); there is nothing to do.
+        return Ok(());
+    }
+    let len_off =
+        libc::off_t::try_from(len).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    loop {
+        // SAFETY: `file` owns the descriptor and outlives the call;
+        // fallocate takes integers only and touches no memory of ours.
+        let rc = unsafe { libc::fallocate(file.as_raw_fd(), 0, 0, len_off) };
+        if rc == 0 {
+            return Ok(());
+        }
+        let error = io::Error::last_os_error();
+        match error.raw_os_error() {
+            Some(libc::EINTR) => {}
+            Some(libc::EOPNOTSUPP) => return extend_to(file, len),
+            _ => return Err(error),
+        }
+    }
+}
+
+/// Other systems: extending the length is the closest portable equivalent.
+#[cfg(not(target_os = "linux"))]
+pub(super) fn allocate_blocking(file: &std::fs::File, len: u64) -> io::Result<()> {
+    extend_to(file, len)
+}
+
+/// Extends the file with zeros up to `len`; never truncates.
+fn extend_to(file: &std::fs::File, len: u64) -> io::Result<()> {
+    if file.metadata()?.len() < len {
+        file.set_len(len)?;
+    }
+    Ok(())
 }
 
 /// Reads until `buf` is full or end of file; returns the bytes read.
-fn read_full_at(file: &std::fs::File, buf: &mut [u8], offset: u64) -> io::Result<usize> {
+pub(super) fn read_full_at(file: &std::fs::File, buf: &mut [u8], offset: u64) -> io::Result<usize> {
     let mut done = 0;
     while done < buf.len() {
         match read_once_at(file, &mut buf[done..], offset + done as u64) {
@@ -144,7 +193,7 @@ fn read_full_at(file: &std::fs::File, buf: &mut [u8], offset: u64) -> io::Result
     Ok(done)
 }
 
-fn write_full_at(file: &std::fs::File, buf: &[u8], offset: u64) -> io::Result<()> {
+pub(super) fn write_full_at(file: &std::fs::File, buf: &[u8], offset: u64) -> io::Result<()> {
     let mut done = 0;
     while done < buf.len() {
         match write_once_at(file, &buf[done..], offset + done as u64) {

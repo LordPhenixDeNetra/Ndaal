@@ -380,4 +380,18 @@ impl File for SimFile {
             Ok(())
         })
     }
+
+    async fn allocate(&self, len: u64) -> io::Result<()> {
+        self.with_write(|st, ino| {
+            let len = check_end(len, 0)?;
+            if inode(st, ino)?.visible.len() >= len {
+                return Ok(());
+            }
+            st.reserve(ino, len)?;
+            let file = inode(st, ino)?;
+            file.visible.resize(len, 0);
+            file.pending.push(DataOp::SetLen(len));
+            Ok(())
+        })
+    }
 }

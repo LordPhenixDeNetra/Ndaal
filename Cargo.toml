@@ -21,6 +21,7 @@ clap = { version = "4.6.7", default-features = false, features = ["std"] }
 fluent-bundle = "0.16.0"
 fluent-syntax = "0.12.0"
 getrandom = "0.4.3"
+libc = "0.2.190"
 ndaal-common = { path = "crates/ndaal-common", version = "0.0.0" }
 ndaal-fuzz = { path = "crates/ndaal-fuzz", version = "0.0.0" }
 ndaal-i18n = { path = "crates/ndaal-i18n", version = "0.0.0" }

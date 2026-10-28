@@ -65,4 +65,10 @@ pub trait File {
 
     /// Truncates or extends (with zeros) the file.
     async fn set_len(&self, len: u64) -> io::Result<()>;
+
+    /// Reserves disk space up to `len` bytes without changing the contents:
+    /// the length becomes `max(len, current length)`, never smaller. Like
+    /// [`File::set_len`], the new length is durable after
+    /// [`File::sync_data`].
+    async fn allocate(&self, len: u64) -> io::Result<()>;
 }

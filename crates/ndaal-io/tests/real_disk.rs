@@ -7,7 +7,7 @@ use ndaal_io::{Clock, Rng};
 
 #[tokio::test(flavor = "current_thread")]
 async fn real_disk_meets_the_contract() {
-    let dir = tempfile::tempdir().expect("tempdir");
+    let dir = common::test_dir();
     common::disk_contract(&RealDisk, dir.path()).await;
 }
 

@@ -9,8 +9,19 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+# Pinning of the I/O threads to the io cores (real::IoPool).
+core_affinity.workspace = true
 getrandom.workspace = true
-tokio = { workspace = true, features = ["rt", "time", "net", "io-util", "signal", "macros"] }
+# Metrics ndaal_io_* of the I/O pool; ndaal-observe depends on ndaal-common only.
+ndaal-observe.workspace = true
+# Lock-free submission queues of the I/O pool (ADR-003).
+rtrb.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["rt", "time", "net", "io-util", "signal", "macros", "sync"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# fallocate (File::allocate); std has no wrapper.
+libc.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
