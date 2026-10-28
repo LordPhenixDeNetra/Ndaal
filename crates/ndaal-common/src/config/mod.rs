@@ -7,6 +7,7 @@
 //! silently falls back to a default.
 
 mod file;
+mod io;
 mod params;
 mod runtime;
 
@@ -16,6 +17,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 pub use file::render;
+pub use io::{IoBackend, IoConfig, Ratio};
 pub use params::{Kind, LOG_LEVELS, PARAMS, Param, env_name, is_log_directive, reference};
 pub use runtime::{CoreCount, CoresConfig, RuntimeConfig};
 
@@ -196,6 +198,8 @@ pub struct Config {
     pub log: LogConfig,
     /// Section `[runtime]`.
     pub runtime: RuntimeConfig,
+    /// Section `[io]`.
+    pub io: IoConfig,
 }
 
 /// Resolved values: the raw text of each parameter and where it came from.
@@ -298,6 +302,7 @@ fn build(values: &Values) -> Result<Config, ConfigError> {
             },
         },
         runtime: build_runtime(values)?,
+        io: io::build_io(values)?,
     })
 }
 
@@ -367,6 +372,7 @@ pub fn entries(config: &Config) -> Vec<(&'static str, String)> {
     ]
     .into_iter()
     .chain(runtime_cores_entries(&config.runtime.cores))
+    .chain(io::io_entries(&config.io))
     .collect()
 }
 

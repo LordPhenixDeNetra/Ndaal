@@ -156,6 +156,11 @@ fn expected_text(expected: Expected, t: &Translator) -> String {
         Expected::Value(Kind::Bool) => t.t("cli-expected-bool"),
         Expected::Value(Kind::Duration) => t.t("cli-expected-duration"),
         Expected::Value(Kind::Count) => t.t("cli-expected-count"),
+        Expected::Value(Kind::Ratio) => t.t("cli-expected-ratio"),
+        Expected::Value(Kind::Range(min, max)) => t.t_args(
+            "cli-expected-range",
+            &[("min", &min.to_string()), ("max", &max.to_string())],
+        ),
         Expected::Value(Kind::LogLevel) => t.t_args(
             "cli-expected-log-level",
             &[("levels", &LOG_LEVELS.join(", "))],

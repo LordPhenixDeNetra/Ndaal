@@ -61,6 +61,8 @@ cli-expected-log-level = a level ({ $levels }) or a list of target=level
 cli-expected-bool = true or false
 cli-expected-duration = a duration such as 0, 250us, 10ms or 2s (at most 10s)
 cli-expected-count = auto or a number from 0 to 4096
+cli-expected-ratio = a number from 0 to 1 with at most 6 decimals, such as 0.3
+cli-expected-range = an integer from { $min } to { $max }
 cli-config-public-without-auth = { $key } (source: { $origin }) listens on a non-local address without authentication. Set auth.allow_insecure = true only if this is intended.
 cli-expected-table = a [section] table
 cli-expected-scalar = a single value, not a list or a table
