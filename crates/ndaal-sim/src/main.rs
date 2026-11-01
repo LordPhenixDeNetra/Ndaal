@@ -15,7 +15,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use ndaal_sim::{
     Outcome, combine, cross_core_result, io_priority_result, ping_pong, ping_pong_result,
-    sweep_with,
+    sweep_with, wal_crash_result,
 };
 
 const USAGE: &str = "usage: ndaal-sim run --seed <u64> [--messages <u32>]\n       \
@@ -87,6 +87,7 @@ fn run_sweep(from: u64, count: u64, messages: u32) -> ExitCode {
             ("ping_pong", ping_pong_result(seed, messages)),
             ("cross_core", cross_core_result(seed)),
             ("io_priority", io_priority_result(seed)),
+            ("wal_crash", wal_crash_result(seed)),
         ])
     };
     let failures = sweep_with(from, count, run, |failure| {
