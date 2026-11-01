@@ -127,6 +127,16 @@ impl File for DeviceFile {
             .await
     }
 
+    async fn write_all_sync_at(&self, buf: &[u8], offset: u64) -> io::Result<()> {
+        // The bytes reach the page cache at once and become durable at the
+        // end of the device's service time: a crash meanwhile tears them,
+        // sector by sector, as on a real device.
+        self.file.write_all_at(buf, offset).await?;
+        self.device
+            .run(self.class, cost(buf.len()), self.file.sync_data())
+            .await
+    }
+
     async fn allocate(&self, len: u64) -> io::Result<()> {
         self.device
             .run(self.class, UNSIZED_COST, self.file.allocate(len))

@@ -71,4 +71,12 @@ pub trait File {
     /// [`File::set_len`], the new length is durable after
     /// [`File::sync_data`].
     async fn allocate(&self, len: u64) -> io::Result<()>;
+
+    /// Writes all of `buf` at `offset`, then makes the file contents
+    /// durable: the log's flush. A backend may do both in one operation
+    /// (one pass through the I/O scheduler).
+    async fn write_all_sync_at(&self, buf: &[u8], offset: u64) -> io::Result<()> {
+        self.write_all_at(buf, offset).await?;
+        self.sync_data().await
+    }
 }

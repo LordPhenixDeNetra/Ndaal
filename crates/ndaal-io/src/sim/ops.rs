@@ -5,7 +5,8 @@ use std::path::{Path, PathBuf};
 
 use crate::{Rng, Xoshiro256PlusPlus};
 
-/// A torn write keeps a prefix that is a whole number of sectors.
+/// A torn write keeps whole sectors, in any order: a device may persist
+/// the sectors of one write out of order.
 pub(super) const SECTOR: usize = 512;
 
 #[derive(Debug, Clone)]
@@ -75,10 +76,13 @@ pub(super) fn survive(rng: &mut Xoshiro256PlusPlus, op: &DataOp, durable: &mut V
         (0, _) => {}
         (1, _) | (_, DataOp::SetLen(_)) => op.apply(durable),
         (_, DataOp::Write { offset, data }) => {
-            let sectors = data.len() / SECTOR;
-            // Bounded by data.len(), so the cast back cannot truncate.
-            let kept = (rng.next_u64() % (sectors as u64 + 1)) as usize * SECTOR;
-            write_into(durable, *offset, &data[..kept]);
+            // Each sector is kept or lost on its own; the last, partial
+            // sector of a write counts as one.
+            for (i, sector) in data.chunks(SECTOR).enumerate() {
+                if rng.next_u64().is_multiple_of(2) {
+                    write_into(durable, *offset + i * SECTOR, sector);
+                }
+            }
         }
     }
 }
@@ -87,23 +91,31 @@ pub(super) fn survive(rng: &mut Xoshiro256PlusPlus, op: &DataOp, durable: &mut V
 mod tests {
     use super::*;
 
-    /// A random crash keeps 0, all, or a whole number of sectors of a write.
+    /// A random crash keeps none, all, or any subset of the sectors of a
+    /// write, not only a prefix: a device may persist them out of order.
     #[test]
-    fn torn_writes_keep_whole_sectors() {
-        let data = vec![7u8; 3 * SECTOR + 100];
+    fn torn_writes_keep_any_subset_of_sectors() {
+        let data: Vec<u8> = (0..8 * SECTOR).map(|i| (i / SECTOR) as u8 + 1).collect();
         let op = DataOp::Write {
             offset: 0,
             data: data.clone(),
         };
+        let mut gap_before_a_kept_sector = false;
         for seed in 0..200 {
             let mut rng = Xoshiro256PlusPlus::from_seed(seed);
-            let mut durable = Vec::new();
+            let mut durable = vec![0u8; data.len()];
             survive(&mut rng, &op, &mut durable);
-            let kept = durable.len();
-            assert!(
-                kept % SECTOR == 0 || kept == data.len(),
-                "seed {seed}: kept {kept}"
-            );
+            let kept: Vec<bool> = durable.chunks(SECTOR).map(|s| s[0] != 0).collect();
+            for (i, sector) in durable.chunks(SECTOR).enumerate() {
+                assert!(
+                    sector.iter().all(|&b| b == 0) || sector == &data[i * SECTOR..(i + 1) * SECTOR],
+                    "seed {seed}: sector {i} half written"
+                );
+            }
+            if kept.windows(2).any(|w| !w[0] && w[1]) {
+                gap_before_a_kept_sector = true;
+            }
         }
+        assert!(gap_before_a_kept_sector, "only prefixes were kept");
     }
 }
