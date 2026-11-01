@@ -49,6 +49,8 @@ exemple : data/wal/shard-03/00000000000000a2.wal
 
 - Taille cible : 64 Mio (configurable). Préalloués (`fallocate`) à la création pour éviter les mises à jour de métadonnées du système de fichiers lors des `fdatasync`.
 - Un fichier est **recyclé** (renommé et réutilisé) plutôt que supprimé quand c'est possible.
+- Un fichier libéré, ou en préparation, s'appelle `free-<numéro sur 16 chiffres hexadécimaux>.wal`. Un fichier ne prend son numéro qu'une fois son en-tête écrit et synchronisé : il est préparé sous son nom libre, puis renommé, suivi d'un `fsync` du répertoire. Un arrêt au milieu laisse un fichier libre, jamais un fichier numéroté invalide.
+- La fin d'un fichier est remplie par des enregistrements `PADDING` : l'écrivain ne laisse jamais entre 1 et 43 octets libres. Un fichier qui n'est pas le dernier se lit donc toujours jusqu'à sa fin exacte.
 
 ### 2.2 En-tête de fichier (4 096 octets)
 
@@ -72,20 +74,21 @@ Les enregistrements se suivent sans alignement individuel.
 
 | Taille | Champ | Description |
 |---|---|---|
-| 4 | `crc` | CRC32C masqué de tout ce qui suit (en-tête restant + charge utile) |
+| 4 | `crc` | CRC32C masqué et ensemencé de tout ce qui suit (en-tête restant + charge utile) |
+| 4 | `header_crc` | CRC32C masqué et ensemencé des 36 octets d'en-tête qui suivent (`len` à `timestamp`) |
 | 4 | `len` | Longueur de la charge utile |
 | 1 | `type` | Type d'enregistrement (§2.4) |
 | 1 | `flags` | Bit 0 : charge utile compressée ; bit 1 : chiffrée ; bit 2 : dernier fragment ; bit 3 : premier fragment |
-| 2 | `recycle_epoch` | 16 bits de poids faible de l'époque de recyclage |
+| 2 | `recycle_epoch` | 16 bits de poids faible de l'époque de recyclage (filtre rapide) |
 | 4 | `partition_id` | Partition concernée |
 | 8 | `lsn` | LSN de la partition |
 | 8 | `term` | Terme Raft (0 hors cluster) |
 | 8 | `timestamp` | Horloge du leader |
 | `len` | `payload` | Charge utile (format dépendant du type) |
 
-En-tête : 40 octets. Un enregistrement dont la charge utile dépasse 1 Mio est **fragmenté** en trames de 1 Mio au plus (bits 2 et 3 ; une trame entière porte les deux). Les fragments sont consécutifs, et peuvent passer d'un fichier au suivant. Les drapeaux « compressé » et « chiffré » ne sont pas encore écrits ; une trame qui les porte est refusée, jamais lue de travers. Les bits 4 à 7 sont réservés et valent zéro.
+En-tête : 44 octets. Les deux CRC sont **ensemencées** ([ADR-034](DECISIONS.md#adr-034--crc-den-tête-et-crc-ensemencées-du-journal)) : 16 octets formés de l'époque de recyclage complète (u64) puis du `file_no` (u64) de l'en-tête du fichier sont placés devant les données couvertes. Une trame d'une autre vie du fichier, ou d'un autre fichier, échoue donc à la CRC, quelle que soit son époque basse. La CRC d'en-tête permet d'écarter un faux candidat en 44 octets, avant de lire la charge utile. Un enregistrement dont la charge utile dépasse 1 Mio est **fragmenté** en trames de 1 Mio au plus (bits 2 et 3 ; une trame entière porte les deux). Les fragments sont consécutifs, et peuvent passer d'un fichier au suivant. Un premier fragment qui arrive alors qu'un enregistrement fragmenté est incomplet signifie que celui-ci a été déchiré par une coupure, puis que l'écrivain a repris : l'enregistrement incomplet est abandonné (il n'a jamais été acquitté, puisque l'acquittement suit la synchronisation de son dernier fragment). Les drapeaux « compressé » et « chiffré » ne sont pas encore écrits ; une trame qui les porte est refusée, jamais lue de travers. Les bits 4 à 7 sont réservés et valent zéro.
 
-**Écritures interrompues** ([ADR-033](DECISIONS.md#adr-033--zone-déchirée-bornée-du-journal)) : à la relecture, le premier enregistrement dont la CRC est invalide, la longueur absurde, le type inconnu ou l'époque de recyclage incorrecte marque la **fin du journal valide**, sauf si une trame valide commence entre **2 Mio (`MAX_FLUSH`) et 2 Mio + 1 Mio + 40 octets plus loin** dans le fichier : il s'agit alors d'une **corruption** (§6.6 de l'architecture). L'écrivain n'a jamais qu'un vidage en cours, qui finit sur une frontière de trame et tient en 2 Mio page réécrite comprise, et n'acquitte qu'après son `fdatasync` : ce qu'une coupure a déchiré n'a jamais été acquitté.
+**Écritures interrompues** ([ADR-033](DECISIONS.md#adr-033--zone-déchirée-bornée-du-journal)) : à la relecture, le premier enregistrement dont la CRC est invalide, la longueur absurde, le type inconnu ou l'époque de recyclage incorrecte marque la **fin du journal valide**, sauf si une trame valide commence entre **2 Mio (`MAX_FLUSH`) et 2 Mio + 1 Mio + 44 octets plus loin** dans le fichier : il s'agit alors d'une **corruption** (§6.6 de l'architecture). L'écrivain n'a jamais qu'un vidage en cours, qui finit sur une frontière de trame et tient en 2 Mio page réécrite comprise, et n'acquitte qu'après son `fdatasync` : ce qu'une coupure a déchiré n'a jamais été acquitté.
 
 **`O_DIRECT`** : les écritures sont des multiples de 4 096 octets. La dernière page partielle est complétée par des zéros sur disque et **réécrite** au vidage suivant avec les nouveaux enregistrements à la suite (les octets déjà écrits sont identiques).
 

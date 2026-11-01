@@ -56,6 +56,7 @@
 | [031](#adr-031--console-web-embarquée-en-svelte-et-typescript) | Console web embarquée en Svelte et TypeScript | Acceptée |
 | [032](#adr-032--frontal-http-sur-axum) | Frontal HTTP sur `axum` | Acceptée |
 | [033](#adr-033--zone-déchirée-bornée-du-journal) | Zone déchirée bornée du journal | Acceptée |
+| [034](#adr-034--crc-den-tête-et-crc-ensemencées-du-journal) | CRC d'en-tête et CRC ensemencées du journal | Acceptée |
 
 ---
 
@@ -655,13 +656,46 @@ Option 3. `axum` est utilisé sans ses fonctionnalités par défaut : `http1` et
 ### Décision
 Option 3.
 - L'écrivain n'a qu'un vidage en cours et n'acquitte qu'après son `fdatasync`. Chaque vidage finit sur une frontière de trame, et toute l'étendue qu'il écrit, page partielle réécrite comprise, tient en `MAX_FLUSH` = 2 Mio. La première trame invalide après une coupure commence donc dans le dernier vidage, et ce qui la suit n'a jamais été acquitté.
-- Le lecteur ne conclut à une corruption que s'il trouve une trame valide qui commence entre `o + MAX_FLUSH` et `o + MAX_FLUSH + 1 Mio + 40` octets, `o` étant le début de la première trame invalide. Des trames acquittées qui suivraient une trame abîmée sont contiguës : l'une d'elles commence forcément dans cette fenêtre. Plus près, il s'agit d'une fin interrompue ; plus loin, une trame isolée ne prouve rien, et la fenêtre borne le coût de la recherche sur des octets hostiles.
+- Le lecteur ne conclut à une corruption que s'il trouve une trame valide qui commence entre `o + MAX_FLUSH` et `o + MAX_FLUSH + 1 Mio + 44` octets, `o` étant le début de la première trame invalide. Des trames acquittées qui suivraient une trame abîmée sont contiguës : l'une d'elles commence forcément dans cette fenêtre. Plus près, il s'agit d'une fin interrompue ; plus loin, une trame isolée ne prouve rien, et la fenêtre borne le coût de la recherche sur des octets hostiles.
 - Les fragments passent de 16 Mio à 1 Mio, avant qu'aucun fichier de journal n'existe.
 
 ### Conséquences
 - Une coupure ne fait plus passer une partition pour corrompue.
 - Une vraie corruption (bit inversé) dans les 3 derniers Mio environ d'un fichier (2 Mio plus une trame) est prise pour une fin de journal : les trames acquittées qui la suivent sont perdues sans alerte. En cluster, les réplicas couvrent ce cas (ENF-DUR-02).
 - La règle s'applique fichier par fichier : la reprise (C2) traite une fin de journal dans un fichier qui n'est pas le dernier comme une corruption.
-- La recherche vérifie une CRC d'au plus 1 Mio à chaque position de la fenêtre qui passe les contrôles bon marché : des charges utiles hostiles peuvent la rendre coûteuse (de l'ordre de 90 Go de CRC au pire). Une CRC propre à l'en-tête de trame lèverait ce coût ; à trancher avant le recyclage (P-60).
+- Le coût de la recherche face à des charges utiles hostiles est réglé par l'[ADR-034](#adr-034--crc-den-tête-et-crc-ensemencées-du-journal).
 - Un enregistrement de 512 Mio compte 512 fragments ; le surcoût d'en-tête est de 0,004 %.
 - Le critère de T02.08 impose à l'écrivain un seul vidage en cours, de 2 Mio au plus.
+
+---
+
+## ADR-034 — CRC d'en-tête et CRC ensemencées du journal
+
+- **Statut** : Acceptée
+- **Date** : 2026-11-01
+- **Exigences liées** : ENF-DUR-01, ENF-DUR-03, ADR-033, T02.07, T02.09, T02.10
+
+### Contexte
+La revue de J02-C1 a relevé deux faiblesses du format de trame, tant qu'aucun fichier de journal n'existait en production :
+- après une trame abîmée, le lecteur vérifie une CRC d'au plus 1 Mio à chaque position de sa fenêtre de recherche ; des charges utiles hostiles (motif répété, époque devinée) pouvaient la rendre très coûteuse, de l'ordre de 90 Go de CRC au pire (P-60) ;
+- une trame ne porte que les 16 bits de poids faible de l'époque de recyclage : après 65 536 recyclages d'un même fichier, une trame d'une ancienne vie pouvait sembler valide (P-59), et une trame recopiée d'un autre fichier n'était pas reconnue.
+
+### Options étudiées
+1. **Garder le format** et compter sur la fenêtre bornée de l'ADR-033.
+2. **Ne plus recycler les fichiers** : règle l'ancienne vie, pas le coût de la recherche, et perd l'intérêt du recyclage.
+3. **Élargir l'époque à 32 bits** dans la trame : repousse le problème sans le régler, et ne reconnaît pas une trame d'un autre fichier.
+4. **Une CRC propre à l'en-tête de trame, et des CRC ensemencées** par l'époque complète et le numéro de fichier.
+
+### Décision
+Option 4.
+- L'en-tête de trame passe de 40 à 44 octets : `crc` (toute la trame après lui), puis `header_crc` (les 36 octets d'en-tête qui suivent), puis les champs existants.
+- Les deux CRC sont calculées sur 16 octets de graine (`recycle_epoch` u64 puis `file_no` u64, petit-boutistes) suivis des données couvertes, avec le masque de LevelDB.
+- Le lecteur valide dans l'ordre : place restante, longueur, époque basse, type, drapeaux, `header_crc`, puis `crc`.
+- La version de format reste 1 : aucun fichier n'existait hors des tests ; le fichier de compatibilité et le corpus de fuzzing ont été régénérés une fois.
+
+### Conséquences
+- Un faux candidat est rejeté en 44 octets : au pire, la recherche après une trame abîmée tombe d'environ 90 Go à environ 46 Mo de CRC (P-60 fermé).
+- Une trame d'une autre vie du fichier ou d'un autre fichier échoue à la CRC, quelle que soit l'époque basse (P-59 fermé).
+- Chaque trame coûte 4 octets de plus (moins de 4 % pour un enregistrement de 100 octets), et chaque CRC 16 octets de calcul en plus.
+- Un enregistrement coupé entre deux fichiers voit chaque fragment ensemencé par le fichier où il se trouve (`encode_fragment`).
+

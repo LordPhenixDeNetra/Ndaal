@@ -166,4 +166,4 @@ Le type `Kind::Size` accepte un entier suivi de `B`, `KiB`, `MiB` ou `GiB`. Ses 
 | Débit insuffisant à cause d'un passage par le pool par vidage | Un seul travail par vidage ; banc `wal/append` ; `io_uring` en J07 |
 | Comportement de `fdatasync` après erreur | État `Failed` définitif, jamais de réessai (décision documentée) |
 | Arrêt au milieu d'un recyclage | L'en-tête est réécrit et synchronisé **avant** le renommage vers le nouveau numéro (§5) : un fichier numéroté a toujours un en-tête valide |
-| La simulation ne déchire pas les pages comme le matériel | `SimDisk` perd ou déchire des secteurs dans le désordre ; les bancs de coupure réels viendront en J07 |
+| La simulation ne déchire pas les pages comme le matériel | Corrigé pendant C2 : `SimDisk` ne gardait qu'un préfixe d'une écriture déchirée, et `DeviceDisk` écrivait et synchronisait au même instant. Une écriture déchirée garde maintenant un sous-ensemble quelconque de secteurs, et les octets entrent dans le cache de pages au dépôt pour devenir durables à la fin du service. Les bancs de coupure réels viendront en J07 |
