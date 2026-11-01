@@ -4,10 +4,12 @@ use std::borrow::Cow;
 
 use ndaal_common::ids::{Lsn, PartitionId};
 
-use crate::masked_crc;
+use crate::seeded_crc;
 
-/// Bytes of a frame before its payload.
-pub const FRAME_HEADER_LEN: usize = 40;
+/// Bytes of a frame before its payload (FORMATS section 2.3, ADR-034).
+pub const FRAME_HEADER_LEN: usize = 44;
+/// Where the fields covered by the header CRC start.
+const HEADER_FIELDS_AT: usize = 8;
 /// Largest payload of one frame; larger records are fragmented (ADR-033).
 pub const MAX_FRAGMENT: usize = 1 << 20;
 /// Largest flush of the writer, hence the largest zone a power cut can
@@ -141,37 +143,50 @@ pub struct Frame<'a> {
     pub payload: &'a [u8],
 }
 
+/// Frames of a record whose payload holds `payload_len` bytes.
+pub fn fragment_count(payload_len: usize) -> usize {
+    payload_len.div_ceil(MAX_FRAGMENT).max(1)
+}
+
 /// Bytes [`encode`] writes for a payload of `payload_len` bytes.
 pub fn encoded_len(payload_len: usize) -> usize {
-    let frames = payload_len.div_ceil(MAX_FRAGMENT).max(1);
-    frames * FRAME_HEADER_LEN + payload_len
+    fragment_count(payload_len) * FRAME_HEADER_LEN + payload_len
 }
 
 /// Appends `record` to `out` as one frame, or as fragments of at most
-/// [`MAX_FRAGMENT`] bytes, stamped with the low 16 bits of `epoch`.
-pub fn encode(record: &Record<'_>, epoch: u64, out: &mut Vec<u8>) {
-    let payload: &[u8] = &record.payload;
-    let count = payload.len().div_ceil(MAX_FRAGMENT).max(1);
-    out.reserve(encoded_len(payload.len()));
-    for i in 0..count {
-        let end = ((i + 1) * MAX_FRAGMENT).min(payload.len());
-        let chunk = &payload[(i * MAX_FRAGMENT).min(end)..end];
-        let mut flags = 0;
-        if i == 0 {
-            flags |= FLAG_FIRST;
-        }
-        if i + 1 == count {
-            flags |= FLAG_LAST;
-        }
-        put_frame(record, flags, epoch, chunk, out);
+/// [`MAX_FRAGMENT`] bytes, for the file `file_no` at recycle `epoch`.
+pub fn encode(record: &Record<'_>, epoch: u64, file_no: u64, out: &mut Vec<u8>) {
+    out.reserve(encoded_len(record.payload.len()));
+    for i in 0..fragment_count(record.payload.len()) {
+        encode_fragment(record, i, epoch, file_no, out);
     }
 }
 
-fn put_frame(record: &Record<'_>, flags: u8, epoch: u64, chunk: &[u8], out: &mut Vec<u8>) {
+/// Appends frame `index` of `record` (see [`fragment_count`]) for the file
+/// `file_no`: a record split between two files has each fragment seeded by
+/// the file it lands in.
+pub fn encode_fragment(
+    record: &Record<'_>,
+    index: usize,
+    epoch: u64,
+    file_no: u64,
+    out: &mut Vec<u8>,
+) {
+    let payload: &[u8] = &record.payload;
+    let count = fragment_count(payload.len());
+    let end = ((index + 1) * MAX_FRAGMENT).min(payload.len());
+    let chunk = &payload[(index * MAX_FRAGMENT).min(end)..end];
+    let mut flags = 0;
+    if index == 0 {
+        flags |= FLAG_FIRST;
+    }
+    if index + 1 == count {
+        flags |= FLAG_LAST;
+    }
     let start = out.len();
     // `chunk` holds at most MAX_FRAGMENT bytes: it fits a u32.
     let len = u32::try_from(chunk.len()).unwrap_or(u32::MAX);
-    out.extend_from_slice(&[0; 4]);
+    out.extend_from_slice(&[0; 8]);
     out.extend_from_slice(&len.to_le_bytes());
     out.push(record.kind.code());
     out.push(flags);
@@ -181,7 +196,9 @@ fn put_frame(record: &Record<'_>, flags: u8, epoch: u64, chunk: &[u8], out: &mut
     out.extend_from_slice(&record.lsn.0.to_le_bytes());
     out.extend_from_slice(&record.term.to_le_bytes());
     out.extend_from_slice(&record.timestamp.to_le_bytes());
+    let header_crc = seeded_crc(epoch, file_no, &out[start + HEADER_FIELDS_AT..]);
+    out[start + 4..start + 8].copy_from_slice(&header_crc.to_le_bytes());
     out.extend_from_slice(chunk);
-    let crc = masked_crc(&out[start + 4..]);
+    let crc = seeded_crc(epoch, file_no, &out[start + 4..]);
     out[start..start + 4].copy_from_slice(&crc.to_le_bytes());
 }

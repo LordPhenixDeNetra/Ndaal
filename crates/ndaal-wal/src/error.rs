@@ -21,6 +21,25 @@ pub enum WalError {
     /// Fragments that do not form a record.
     #[error("log record fragments do not match: {0}")]
     Fragment(FragmentError),
+    /// A disk operation of the log failed.
+    #[error("log i/o failed: {0}")]
+    Io(std::io::ErrorKind),
+    /// Too many records wait for a flush: retry later (P8).
+    #[error("log busy: too many records pending")]
+    Busy,
+    /// A flush failed earlier: the log takes no more records until the
+    /// node restarts from it.
+    #[error("log failed after an i/o error")]
+    Failed,
+    /// The log is damaged: a frame at `offset` of file `file_no` is invalid
+    /// and valid frames follow it (ADR-033).
+    #[error("log file {file_no} corrupt at offset {offset}")]
+    Corrupt {
+        /// Number of the log file.
+        file_no: u64,
+        /// Offset of the damaged frame.
+        offset: u64,
+    },
 }
 
 /// How fragments of a record fail to fit together.

@@ -25,8 +25,8 @@ fn frames(bytes: &[u8]) -> Vec<(usize, usize, u8)> {
     let mut out = Vec::new();
     let mut at = 0;
     while at < bytes.len() {
-        let len = u32::from_le_bytes(bytes[at + 4..at + 8].try_into().expect("4 bytes")) as usize;
-        out.push((at, len, bytes[at + 9]));
+        let len = u32::from_le_bytes(bytes[at + 8..at + 12].try_into().expect("4 bytes")) as usize;
+        out.push((at, len, bytes[at + 13]));
         at += FRAME_HEADER_LEN + len;
     }
     out
@@ -35,12 +35,12 @@ fn frames(bytes: &[u8]) -> Vec<(usize, usize, u8)> {
 #[test]
 fn small_record_is_one_frame() {
     let mut out = Vec::new();
-    encode(&record(b"hello".to_vec()), 1, &mut out);
+    encode(&record(b"hello".to_vec()), 1, 0, &mut out);
     assert_eq!(out.len(), FRAME_HEADER_LEN + 5);
     assert_eq!(frames(&out), [(0, 5, FIRST | LAST)]);
-    assert_eq!(out[8], RecordType::KvEffects.code());
+    assert_eq!(out[12], RecordType::KvEffects.code());
     let mut empty = Vec::new();
-    encode(&record(Vec::new()), 1, &mut empty);
+    encode(&record(Vec::new()), 1, 0, &mut empty);
     assert_eq!(frames(&empty), [(0, 0, FIRST | LAST)]);
 }
 
@@ -52,7 +52,7 @@ fn fragmentation_boundaries() {
         (3 * MAX_FRAGMENT, 3),
     ] {
         let mut out = Vec::new();
-        encode(&record(vec![7; len]), 1, &mut out);
+        encode(&record(vec![7; len]), 1, 0, &mut out);
         let f = frames(&out);
         assert_eq!(f.len(), count, "{len}");
         assert_eq!(out.len(), encoded_len(len), "{len}");
@@ -70,8 +70,8 @@ fn fragmentation_boundaries() {
 #[test]
 fn epoch_low_bits_in_frame() {
     let mut out = Vec::new();
-    encode(&record(b"x".to_vec()), 0x1_0005, &mut out);
-    assert_eq!(u16::from_le_bytes([out[10], out[11]]), 0x0005);
+    encode(&record(b"x".to_vec()), 0x1_0005, 0, &mut out);
+    assert_eq!(u16::from_le_bytes([out[14], out[15]]), 0x0005);
 }
 
 #[test]

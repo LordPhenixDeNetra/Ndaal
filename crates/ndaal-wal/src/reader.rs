@@ -13,7 +13,7 @@ use ndaal_common::ids::{Lsn, PartitionId};
 use crate::record::{FLAG_COMPRESSED, FLAG_ENCRYPTED, FLAG_FIRST, FLAG_LAST, FLAGS_RESERVED};
 use crate::{
     FRAME_HEADER_LEN, FileHeader, Frame, HEADER_LEN, MAX_FLUSH, MAX_FRAGMENT, RecordType, WalError,
-    masked_crc,
+    seeded_crc,
 };
 
 /// What [`FileReader::next_step`] found.
@@ -39,7 +39,8 @@ pub enum Step<'a> {
 pub struct FileReader<'a> {
     file: &'a [u8],
     header: FileHeader,
-    epoch: u16,
+    epoch: u64,
+    file_no: u64,
     at: usize,
     done: Option<Step<'a>>,
 }
@@ -66,8 +67,8 @@ impl<'a> FileReader<'a> {
         Ok(FileReader {
             file,
             header,
-            // Frames keep the low 16 bits of the epoch.
-            epoch: (header.recycle_epoch & 0xFFFF) as u16,
+            epoch: header.recycle_epoch,
+            file_no: header.file_no,
             at: HEADER_LEN,
             done: None,
         })
@@ -126,36 +127,102 @@ impl<'a> FileReader<'a> {
 
     /// The valid frame at `at`, its flags and its total length. Cheap
     /// checks come first: scanning zeros never computes a CRC.
-    fn frame_at(&self, at: usize) -> Option<(Frame<'a>, u8, usize)> {
-        let b = self.file;
-        let header = b.get(at..at.checked_add(FRAME_HEADER_LEN)?)?;
-        let len = usize::try_from(u32_at(header, 4)).ok()?;
-        if len > MAX_FRAGMENT {
+    /// The kind, flags and payload length of the frame at `at` if its
+    /// header is valid: every cheap check, then the header CRC, which
+    /// rejects a false candidate in 44 bytes before any payload is read
+    /// (ADR-034).
+    fn header_at(&self, at: usize) -> Option<(RecordType, u8, usize)> {
+        let header = self.file.get(at..at.checked_add(FRAME_HEADER_LEN)?)?;
+        let len = usize::try_from(u32_at(header, 8)).ok()?;
+        if len > MAX_FRAGMENT || self.file.len() - at - FRAME_HEADER_LEN < len {
             return None;
         }
-        let end = at + FRAME_HEADER_LEN + len;
-        let frame = b.get(at..end)?;
-        if u16::from_le_bytes([header[10], header[11]]) != self.epoch {
+        // Frames keep the low 16 bits of the epoch: a cheap first filter.
+        if u16::from_le_bytes([header[14], header[15]]) != (self.epoch & 0xFFFF) as u16 {
             return None;
         }
-        let kind = RecordType::from_code(header[8])?;
-        let flags = header[9];
+        let kind = RecordType::from_code(header[12])?;
+        let flags = header[13];
         if flags & FLAGS_RESERVED != 0 {
             return None;
         }
-        if masked_crc(&frame[4..]) != u32_at(header, 0) {
+        if seeded_crc(self.epoch, self.file_no, &header[8..]) != u32_at(header, 4) {
+            return None;
+        }
+        Some((kind, flags, len))
+    }
+
+    /// The valid frame at `at`, its flags and its total length.
+    fn frame_at(&self, at: usize) -> Option<(Frame<'a>, u8, usize)> {
+        let (kind, flags, len) = self.header_at(at)?;
+        let frame = &self.file[at..at + FRAME_HEADER_LEN + len];
+        let header = &frame[..FRAME_HEADER_LEN];
+        if seeded_crc(self.epoch, self.file_no, &frame[4..]) != u32_at(header, 0) {
             return None;
         }
         let parsed = Frame {
             kind,
-            partition: PartitionId(u32_at(header, 12)),
-            lsn: Lsn(u64_at(header, 16)),
-            term: u64_at(header, 24),
-            timestamp: u64_at(header, 32),
+            partition: PartitionId(u32_at(header, 16)),
+            lsn: Lsn(u64_at(header, 20)),
+            term: u64_at(header, 28),
+            timestamp: u64_at(header, 36),
             first: flags & FLAG_FIRST != 0,
             last: flags & FLAG_LAST != 0,
             payload: &frame[FRAME_HEADER_LEN..],
         };
         Some((parsed, flags, FRAME_HEADER_LEN + len))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::borrow::Cow;
+
+    use ndaal_common::ids::{Lsn, NodeId, PartitionId};
+
+    use super::*;
+    use crate::{Record, encode};
+
+    fn file() -> Vec<u8> {
+        let header = FileHeader {
+            shard: 0,
+            file_no: 3,
+            node: NodeId([0; 16]),
+            created_at: 0,
+            recycle_epoch: 9,
+            recycled: true,
+        };
+        let mut bytes = header.encode().to_vec();
+        let record = Record {
+            kind: RecordType::KvEffects,
+            partition: PartitionId(1),
+            lsn: Lsn(1),
+            term: 0,
+            timestamp: 0,
+            payload: Cow::Borrowed(b"payload"),
+        };
+        encode(&record, 9, 3, &mut bytes);
+        bytes
+    }
+
+    #[test]
+    fn header_crc_rejects_before_payload_crc() {
+        let mut damaged_payload = file();
+        let last = damaged_payload.len() - 1;
+        damaged_payload[last] ^= 1;
+        let reader = FileReader::new(&damaged_payload).expect("header");
+        assert!(reader.header_at(HEADER_LEN).is_some(), "header still valid");
+        assert!(
+            reader.frame_at(HEADER_LEN).is_none(),
+            "payload CRC catches it"
+        );
+
+        let mut damaged_header = file();
+        damaged_header[HEADER_LEN + 16] ^= 1;
+        let reader = FileReader::new(&damaged_header).expect("header");
+        assert!(
+            reader.header_at(HEADER_LEN).is_none(),
+            "header CRC catches it"
+        );
     }
 }

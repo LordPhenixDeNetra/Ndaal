@@ -5,16 +5,17 @@ use std::borrow::Cow;
 
 use ndaal_common::ids::{Lsn, NodeId, PartitionId};
 use ndaal_wal::{
-    FileHeader, FileReader, HEADER_LEN, MAX_FLUSH, MAX_FRAGMENT, Record, RecordType, Step,
-    WalError, encode, masked_crc,
+    FRAME_HEADER_LEN, FileHeader, FileReader, HEADER_LEN, MAX_FLUSH, MAX_FRAGMENT, Record,
+    RecordType, Step, WalError, encode, seeded_crc,
 };
 
 const EPOCH: u64 = 5;
+const FILE_NO: u64 = 7;
 
 fn header(epoch: u64) -> FileHeader {
     FileHeader {
         shard: 1,
-        file_no: 7,
+        file_no: FILE_NO,
         node: NodeId([1; 16]),
         created_at: 0,
         recycle_epoch: epoch,
@@ -39,7 +40,7 @@ fn file(records: &[Record<'_>]) -> (Vec<u8>, Vec<usize>) {
     let mut starts = Vec::new();
     for r in records {
         starts.push(bytes.len());
-        encode(r, EPOCH, &mut bytes);
+        encode(r, EPOCH, FILE_NO, &mut bytes);
     }
     (bytes, starts)
 }
@@ -76,7 +77,7 @@ fn reads_back_what_was_written() {
     let (mut bytes, _) = file(&records);
     let mut padding = record(0, vec![0; 16]);
     padding.kind = RecordType::Padding;
-    encode(&padding, EPOCH, &mut bytes);
+    encode(&padding, EPOCH, FILE_NO, &mut bytes);
     let (frames, end) = read_all(&bytes);
     assert_eq!(frames, expected(&records), "padding is skipped");
     assert_eq!(
@@ -108,6 +109,7 @@ fn old_epoch_is_the_end() {
         encode(
             &record(100 + i, vec![1; MAX_FRAGMENT]),
             EPOCH - 1,
+            FILE_NO,
             &mut bytes,
         );
     }
@@ -151,7 +153,7 @@ fn corruption_beyond_the_torn_zone() {
 #[test]
 fn absurd_length_is_invalid() {
     let (mut bytes, starts) = file(&small(2));
-    bytes[starts[1] + 4..starts[1] + 8].copy_from_slice(&u32::MAX.to_le_bytes());
+    bytes[starts[1] + 8..starts[1] + 12].copy_from_slice(&u32::MAX.to_le_bytes());
     let (frames, end) = read_all(&bytes);
     assert_eq!(frames.len(), 1);
     assert_eq!(
@@ -162,7 +164,7 @@ fn absurd_length_is_invalid() {
     );
     // A length that runs past the end of the file.
     let (mut bytes, starts) = file(&small(2));
-    bytes[starts[1] + 4..starts[1] + 8].copy_from_slice(&1000u32.to_le_bytes());
+    bytes[starts[1] + 8..starts[1] + 12].copy_from_slice(&1000u32.to_le_bytes());
     assert_eq!(
         read_all(&bytes).1,
         Ok(Step::End {
@@ -224,8 +226,10 @@ fn every_truncation_is_a_prefix() {
 fn compressed_flag_is_unsupported() {
     let (mut bytes, starts) = file(&small(1));
     let at = starts[0];
-    bytes[at + 9] |= 1;
-    let crc = masked_crc(&bytes[at + 4..]);
+    bytes[at + 13] |= 1;
+    let header_crc = seeded_crc(EPOCH, FILE_NO, &bytes[at + 8..at + FRAME_HEADER_LEN]);
+    bytes[at + 4..at + 8].copy_from_slice(&header_crc.to_le_bytes());
+    let crc = seeded_crc(EPOCH, FILE_NO, &bytes[at + 4..]);
     bytes[at..at + 4].copy_from_slice(&crc.to_le_bytes());
     assert!(matches!(read_all(&bytes).1, Err(WalError::Unsupported(_))));
 }
@@ -247,9 +251,9 @@ fn end_is_sticky() {
 fn scan_stops_one_fragment_past_the_torn_zone() {
     let (mut bytes, starts) = file(&small(2));
     bytes[starts[1] + 45] ^= 0xFF;
-    let far = starts[1] + MAX_FLUSH + MAX_FRAGMENT + 40 + 1;
+    let far = starts[1] + MAX_FLUSH + MAX_FRAGMENT + FRAME_HEADER_LEN + 1;
     bytes.resize(far, 0);
-    encode(&record(9, b"stray".to_vec()), EPOCH, &mut bytes);
+    encode(&record(9, b"stray".to_vec()), EPOCH, FILE_NO, &mut bytes);
     assert_eq!(
         read_all(&bytes).1,
         Ok(Step::End {
@@ -259,12 +263,39 @@ fn scan_stops_one_fragment_past_the_torn_zone() {
     // At the edge of the window, it is still found.
     let (mut bytes, starts) = file(&small(2));
     bytes[starts[1] + 45] ^= 0xFF;
-    bytes.resize(starts[1] + MAX_FLUSH + MAX_FRAGMENT + 40, 0);
-    encode(&record(9, b"edge".to_vec()), EPOCH, &mut bytes);
+    bytes.resize(starts[1] + MAX_FLUSH + MAX_FRAGMENT + FRAME_HEADER_LEN, 0);
+    encode(&record(9, b"edge".to_vec()), EPOCH, FILE_NO, &mut bytes);
     assert_eq!(
         read_all(&bytes).1,
         Ok(Step::Corrupt {
             offset: starts[1] as u64
         })
     );
+}
+
+/// CRCs are seeded by the full epoch and the file number: a frame from an
+/// older life of the file, or copied from another file, never reads back,
+/// even when the low 16 bits of its epoch match (P-59).
+#[test]
+fn other_epoch_is_rejected_even_with_same_low_bits() {
+    let mut bytes = header(0x1_0005).encode().to_vec();
+    let valid = bytes.len() as u64;
+    for r in small(3) {
+        encode(&r, 5, FILE_NO, &mut bytes);
+    }
+    let (frames, end) = read_all(&bytes);
+    assert!(frames.is_empty(), "{frames:?}");
+    assert_eq!(end, Ok(Step::End { valid_len: valid }));
+}
+
+#[test]
+fn frame_copied_from_another_file_is_rejected() {
+    let mut bytes = header(EPOCH).encode().to_vec();
+    let valid = bytes.len() as u64;
+    for r in small(3) {
+        encode(&r, EPOCH, FILE_NO + 1, &mut bytes);
+    }
+    let (frames, end) = read_all(&bytes);
+    assert!(frames.is_empty(), "{frames:?}");
+    assert_eq!(end, Ok(Step::End { valid_len: valid }));
 }

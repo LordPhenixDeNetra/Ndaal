@@ -55,7 +55,7 @@ pub fn wal_reader(data: &[u8]) {
 /// `record` written alone in a file with `header`, then read back.
 fn read_one(header: &FileHeader, record: &Record<'_>) -> Option<Record<'static>> {
     let mut file = header.encode().to_vec();
-    encode(record, header.recycle_epoch, &mut file);
+    encode(record, header.recycle_epoch, header.file_no, &mut file);
     let mut reader = FileReader::new(&file).ok()?;
     let mut glue = Reassembler::default();
     while let Ok(Step::Frame(frame)) = reader.next_step() {
