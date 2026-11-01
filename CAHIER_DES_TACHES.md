@@ -23,6 +23,7 @@
 - [J12 — Exploitation](#j12--exploitation)
 - [J13 — Fonctions avancées et écosystème](#j13--fonctions-avancées-et-écosystème)
 - [J14 — Préparation à la production](#j14--préparation-à-la-production)
+- [J15 — Publications scientifiques](#j15--publications-scientifiques)
 - [Journal des jalons](#journal-des-jalons)
 - [Registre des modifications du plan](#registre-des-modifications-du-plan)
 
@@ -74,7 +75,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
 | J01 | Fondations du projet | 26 | 26 | 100 % | ~68 | Terminé |
-| J02 | Noyau de stockage | 26 | 6 | 23 % | ~106 | En cours |
+| J02 | Noyau de stockage | 26 | 8 | 31 % | ~106 | En cours |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
 | J05 | Moteur vectoriel | 27 | 0 | 0 % | ~126 | À faire |
@@ -87,7 +88,8 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **300** | **32** | **11 %** | **~1320** | |
+| J15 | Publications scientifiques | 17 | 0 | 0 % | ~91 | À faire |
+| **Total** | | **317** | **34** | **11 %** | **~1411** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -98,7 +100,7 @@ L'effort est une somme indicative (XS = 0,5 ; S = 1,5 ; M = 4 ; L = 7,5 ; XL = 1
 
 ```bash
 # Compte les tâches cochées et totales par jalon
-for j in $(seq -w 1 14); do
+for j in $(seq -w 1 15); do
   total=$(grep -c "^- \[.\] \*\*T$j\." CAHIER_DES_TACHES.md)
   fait=$(grep -c "^- \[x\] \*\*T$j\." CAHIER_DES_TACHES.md)
   echo "J$j : $fait / $total"
@@ -127,9 +129,11 @@ flowchart LR
     J10 & J11 --> J12[J12 Exploitation]
     J10 --> J13[J13 Fonctions avancées]
     J07 & J12 & J13 --> J14[J14 Préparation production]
+    J02 -.-> J15[J15 Publications scientifiques]
+    J06 & J09 -.-> J15
 ```
 
-Lecture : J03, J04 et J05 peuvent avancer **en parallèle** après J02. J07 et J08 peuvent avancer en parallèle de J09.
+Lecture : J03, J04 et J05 peuvent avancer **en parallèle** après J02. J07 et J08 peuvent avancer en parallèle de J09. J15 est **transversal** (traits pointillés) : sa collecte commence pendant J02, et chaque article se déclenche à la fin des tâches techniques qu'il mesure.
 
 Chaque jalon produit un **résultat utilisable** :
 
@@ -267,13 +271,13 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T02.08** — `ndaal-wal` : écrivain avec double tampon, écriture groupée, alignement 4 Kio, réécriture de la dernière page partielle
   - Estimation : L · Dépend de : T02.07, T02.06 · Exigences : ENF-PERF-03, ENF-DUR-01
   - Fin : le shard n'est jamais bloqué par un `fdatasync` ; débit ≥ 500 000 petits enregistrements/s par shard sur la machine de référence ; un seul vidage en cours, qui finit sur une frontière de trame et tient en 2 Mio page partielle réécrite comprise, acquittement après `fdatasync` ([ADR-033](DECISIONS.md#adr-033--zone-déchirée-bornée-du-journal), critère complété avec l'accord du responsable le 2026-10-28).
-- [ ] **T02.09** — `ndaal-wal` : fichiers préalloués, recyclage, époque de recyclage
+- [x] **T02.09** — `ndaal-wal` : fichiers préalloués, recyclage, époque de recyclage
   - Estimation : M · Dépend de : T02.08 · Exigences : ENF-DUR-01
   - Fin : un fichier recyclé ne peut jamais faire relire un ancien enregistrement (test dédié).
 - [x] **T02.10** — `ndaal-wal` : lecteur ; distinction fin de journal / corruption ; enregistrements fragmentés
   - Estimation : M · Dépend de : T02.07 · Exigences : ENF-DUR-03
   - Fin : une troncature à n'importe quel octet donne un préfixe valide ; une corruption au milieu est signalée.
-- [ ] **T02.11** — Modes de durabilité `none`, `async` (vidage périodique), `sync`
+- [x] **T02.11** — Modes de durabilité `none`, `async` (vidage périodique), `sync`
   - Estimation : S · Dépend de : T02.08 · Exigences : ENF-DUR-04
   - Fin : tests de chaque mode avec coupure simulée : seules les pertes autorisées par le mode se produisent.
 - [ ] **T02.12** — `ndaal-storage` : abstraction `Partition` (LSN, application des effets, LSN appliqué/durable, attente de LSN)
@@ -1197,6 +1201,70 @@ Chaque jalon produit un **résultat utilisable** :
 
 ---
 
+## J15 — Publications scientifiques
+
+**Objectif** : tirer de Ndaal des articles scientifiques défendables : chaque affirmation repose sur du code étiqueté et sur une mesure reproductible, chaque hypothèse est réfutable, les meilleures références sont comparées honnêtement.
+
+**Livrable** : registre des défauts, protocole de recherche, un article court (atelier), trois articles (système ; cohérence entre modèles ; journal unifié et ingénierie du stockage), artefacts reproductibles.
+
+**Critères de sortie** : chaque article soumis ou publié est adossé à une étiquette git, à ses scripts de mesure et à ses données brutes ; aucune affirmation sans preuve dans le registre des affirmations de l'article ; relecture extérieure faite avant chaque soumission.
+
+**Règles propres** : jalon transversal, sans effet sur les critères de sortie des autres jalons. La rédaction d'un article ne commence qu'une fois ses tâches techniques terminées ; les sections stables (motivation, conception, travaux connexes) peuvent être écrites plus tôt. Les ablations sont des options de banc désactivées par défaut (CLAUDE.md §8).
+
+- [ ] **T15.01** — Registre des défauts trouvés, par technique : composant, technique qui l'a révélé (test de propriétés, simulation, fuzzing, revue, test intermittent), gravité, correction, test ajouté
+  - Estimation : S · Dépend de : — · Exigences : ENF-QUAL-04
+  - Fin : registre versionné, rempli depuis J01 (dont ADR-033 et les revues finales de J02) ; chaque correction de défaut des jalons suivants y ajoute une ligne.
+- [ ] **T15.02** — Protocole de recherche : question et hypothèses réfutables de chaque article, ablations, plan de mesure, menaces à la validité
+  - Estimation : M · Dépend de : T15.01 · Exigences : ADR-027
+  - Fin : chaque hypothèse est reliée à une expérience, à ses ablations et aux tâches qui la rendent mesurable ; document relu.
+- [ ] **T15.03** — Étude bibliographique : vérification des projets proches (existence, licence, maturité, différence réelle) et fiches de lecture des références (multi-modèle, thread-per-core, journaux et LSM, index vectoriels, isolation des E/S, simulation déterministe)
+  - Estimation : M · Dépend de : — · Exigences : —
+  - Fin : une fiche par projet et par référence, et une bibliographie prête à citer.
+- [ ] **T15.04** — Ablations du journal et des transactions : un journal par modèle au lieu d'un par cœur ; trois écritures indépendantes au lieu d'une entrée `TX`
+  - Estimation : L · Dépend de : T06.02, T06.14 · Exigences : ADR-004, EF-TX-01
+  - Fin : options de banc désactivées par défaut, testées ; `tx-overhead` mesuré avec et sans.
+- [ ] **T15.05** — Ablations de l'isolation : politique FIFO et seau du fond désactivé dans le pool d'E/S réel
+  - Estimation : M · Dépend de : T02.06, T07.09 · Exigences : ENF-ISO-01
+  - Fin : bancs `iso-*` mesurés avec et sans l'ordonnanceur, sur la machine de référence.
+- [ ] **T15.06** — Chaîne de mesure reproductible des articles : machine de référence décrite, versions épinglées, script unique, résultats bruts conservés, figures générées par script
+  - Estimation : M · Dépend de : T07.17 · Exigences : ADR-027, ENF-COMP
+  - Fin : une commande rejoue toutes les mesures d'un article et régénère ses figures ; D-05 tranchée.
+- [ ] **T15.07** — Article court (atelier) : distinguer fin de journal et corruption après une coupure (ADR-033, ADR-034) ; campagne de coupures comparée aux modes de reprise de RocksDB et de PostgreSQL (faux positifs, faux négatifs, coût de la recherche)
+  - Estimation : L · Dépend de : T02.11, T15.03 · Exigences : ENF-DUR-01, ENF-DUR-03
+  - Fin : résultats de la campagne et nouveauté vérifiée dans la bibliographie, ou décision consignée de ne pas écrire l'article.
+- [ ] **T15.08** — Article court : rédaction, relecture extérieure, soumission à un atelier
+  - Estimation : M · Dépend de : T15.07 · Exigences : —
+  - Fin : article soumis, étiquette git du code mesuré.
+- [ ] **T15.09** — Article 1 (le système) : sections stables (motivation, conception, transactions croisées par construction, compatibilité, travaux connexes)
+  - Estimation : M · Dépend de : T15.02, T15.03 · Exigences : —
+  - Fin : sections relues, chaque affirmation reliée à un ADR, un test ou une tâche.
+- [ ] **T15.10** — Article 1 : évaluation de parité contre Valkey, Qdrant et MinIO et charge mixte, avec l'ablation du journal
+  - Estimation : L · Dépend de : T03.29, T04.24, T05.26, T06.16, T15.04, T15.06 · Exigences : ENF-COMP, ADR-027
+  - Fin : figures et tableaux générés par script sur la machine de référence ; résultats défavorables inclus.
+- [ ] **T15.11** — Article 1 : rédaction complète, relecture extérieure, préprint arXiv (cs.DB)
+  - Estimation : L · Dépend de : T15.09, T15.10 · Exigences : —
+  - Fin : préprint déposé, étiquette git correspondante, données brutes publiées.
+- [ ] **T15.12** — Article 2 (cohérence entre modèles) : campagne de validation (vérification d'historiques, simulation avec pannes autour du COMMIT, témoins qui doivent être détectés)
+  - Estimation : L · Dépend de : T06.13, T15.01 · Exigences : EF-TX-01, EF-TX-02
+  - Fin : graines jouées, pannes explorées, violations trouvées et corrigées, consignées dans le registre des défauts.
+- [ ] **T15.13** — Article 2 : expériences (objets provisoires de 1 Mio à 1 Gio, visibilité vectorielle pendant les transactions, contention et réessais, référence en double écriture sur trois services)
+  - Estimation : L · Dépend de : T06.03, T06.14, T15.06 · Exigences : EF-TX-03, EF-TX-04
+  - Fin : chaque hypothèse de l'article 2 confirmée ou réfutée par une mesure reproductible.
+- [ ] **T15.14** — Article 2 : rédaction, relecture extérieure, soumission (conférence ou atelier de bases de données)
+  - Estimation : L · Dépend de : T15.12, T15.13 · Exigences : —
+  - Fin : article soumis, étiquette git, données brutes publiées.
+- [ ] **T15.15** — Article 3 (journal unifié et ingénierie du stockage) : expériences (borne de latence simulée confrontée au matériel, 10 000 coupures, niveaux de stockage, réplication dans le même flux)
+  - Estimation : L · Dépend de : T07.09, T08.17, T09.15, T09.17, T15.05 · Exigences : ENF-ISO-01, ENF-DUR-01, ENF-DUR-02
+  - Fin : chaque hypothèse de l'article 3 confirmée ou réfutée par une mesure reproductible.
+- [ ] **T15.16** — Article 3 : rédaction, relecture extérieure, soumission (conférence ou atelier de systèmes ou de stockage)
+  - Estimation : L · Dépend de : T15.15 · Exigences : —
+  - Fin : article soumis, étiquette git, données brutes publiées.
+- [ ] **T15.17** — Article 4 (méthode de test) : décision d'ouverture, sur les chiffres du registre des défauts
+  - Estimation : S · Dépend de : T15.01, T15.12 · Exigences : —
+  - Fin : décision consignée dans le journal des jalons, avec les chiffres qui la justifient.
+
+---
+
 ## Journal des jalons
 
 À compléter à la clôture de chaque jalon.
@@ -1217,6 +1285,7 @@ Chaque jalon produit un **résultat utilisable** :
 | J12 | | | | | |
 | J13 | | | | | |
 | J14 | | | | | |
+| J15 | | | | | |
 
 ---
 
@@ -1233,3 +1302,4 @@ Toute tâche ajoutée, abandonnée ou déplacée est consignée ici.
 | 2026-10-12 | T12.22 à T12.27, T13.21, T13.22 | Ajoutées | Écrans de la console, API publique associée, tests ; exploration multi-modèles (EF-OPS-14) | — |
 | 2026-10-12 | T01.25 | Ajoutée | Versions figées des outils et vérification du code propre à Linux depuis Windows ou macOS (CLAUDE.md §4.12, §11) | — |
 | 2026-10-14 | T01.26 | Ajoutée ; T01.20 modifiée (sans `nightly.yml`) | La simulation nocturne exigée pour clore un jalon (STRATEGIE §14, critère 2) n'existait pas : T01.20 avait été cochée sur son critère de fin, qui ne la demandait pas | — |
+| 2026-11-01 | T15.01 à T15.17 | Ajoutées (nouveau jalon transversal J15) | Préparer des articles scientifiques défendables à partir du code et des mesures : registre des défauts, protocole de recherche, ablations, article court, trois articles | — |
