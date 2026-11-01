@@ -74,7 +74,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
 | J01 | Fondations du projet | 26 | 26 | 100 % | ~68 | Terminé |
-| J02 | Noyau de stockage | 26 | 4 | 15 % | ~106 | En cours |
+| J02 | Noyau de stockage | 26 | 6 | 23 % | ~106 | En cours |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
 | J05 | Moteur vectoriel | 27 | 0 | 0 % | ~126 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **300** | **30** | **10 %** | **~1320** | |
+| **Total** | | **300** | **32** | **11 %** | **~1320** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -261,7 +261,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T02.06** — Backend d'E/S « pool de threads » (`pread`, `pwrite`, `fdatasync`, `fallocate`)
   - Estimation : M · Dépend de : T02.05 · Exigences : ADR-016, ENF-PORT-03
   - Fin : suite de tests commune des backends réussie sur ext4 et XFS.
-- [ ] **T02.07** — `ndaal-wal` : format d'enregistrement, encodage/décodage, CRC32C masqué ([FORMATS §2](FORMATS_DE_DONNEES.md#2-journal-wal))
+- [x] **T02.07** — `ndaal-wal` : format d'enregistrement, encodage/décodage, CRC32C masqué ([FORMATS §2](FORMATS_DE_DONNEES.md#2-journal-wal))
   - Estimation : M · Dépend de : T01.05 · Exigences : ENF-DUR-03
   - Fin : tests de propriétés aller-retour ; tout octet modifié est détecté.
 - [ ] **T02.08** — `ndaal-wal` : écrivain avec double tampon, écriture groupée, alignement 4 Kio, réécriture de la dernière page partielle
@@ -270,7 +270,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T02.09** — `ndaal-wal` : fichiers préalloués, recyclage, époque de recyclage
   - Estimation : M · Dépend de : T02.08 · Exigences : ENF-DUR-01
   - Fin : un fichier recyclé ne peut jamais faire relire un ancien enregistrement (test dédié).
-- [ ] **T02.10** — `ndaal-wal` : lecteur ; distinction fin de journal / corruption ; enregistrements fragmentés
+- [x] **T02.10** — `ndaal-wal` : lecteur ; distinction fin de journal / corruption ; enregistrements fragmentés
   - Estimation : M · Dépend de : T02.07 · Exigences : ENF-DUR-03
   - Fin : une troncature à n'importe quel octet donne un préfixe valide ; une corruption au milieu est signalée.
 - [ ] **T02.11** — Modes de durabilité `none`, `async` (vidage périodique), `sync`
