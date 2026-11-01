@@ -171,6 +171,7 @@ fn runtime_values_are_explained_in_french() {
             "un nombre de 0 \u{e0} 1",
         ),
         ("io.queue_depth=0", "un entier de 1 \u{e0} 1024"),
+        ("wal.file_size=3MiB", "une taille comme 64MiB"),
     ] {
         let output = ndaal(&["--set", set, "config", "show"], Some("fr"), &[]);
         let text = stderr(&output);

@@ -5,7 +5,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use ndaal_common::config::{ConfigError, Expected, Kind, LOG_LEVELS, Origin};
+use ndaal_common::config::{ConfigError, Expected, Kind, LOG_LEVELS, Origin, format_size};
 use ndaal_i18n::Translator;
 
 use crate::health::HealthError;
@@ -160,6 +160,10 @@ fn expected_text(expected: Expected, t: &Translator) -> String {
         Expected::Value(Kind::Range(min, max)) => t.t_args(
             "cli-expected-range",
             &[("min", &min.to_string()), ("max", &max.to_string())],
+        ),
+        Expected::Value(Kind::Size(min, max)) => t.t_args(
+            "cli-expected-size",
+            &[("min", &format_size(min)), ("max", &format_size(max))],
         ),
         Expected::Value(Kind::LogLevel) => t.t_args(
             "cli-expected-log-level",

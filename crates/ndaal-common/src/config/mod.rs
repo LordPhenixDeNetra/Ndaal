@@ -10,6 +10,7 @@ mod file;
 mod io;
 mod params;
 mod runtime;
+mod wal;
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -20,6 +21,7 @@ pub use file::render;
 pub use io::{IoBackend, IoConfig, Ratio};
 pub use params::{Kind, LOG_LEVELS, PARAMS, Param, env_name, is_log_directive, reference};
 pub use runtime::{CoreCount, CoresConfig, RuntimeConfig};
+pub use wal::{DurabilityConfig, WalConfig, format_size};
 
 use crate::error::{Classify, ErrorClass};
 
@@ -200,6 +202,10 @@ pub struct Config {
     pub runtime: RuntimeConfig,
     /// Section `[io]`.
     pub io: IoConfig,
+    /// Section `[wal]`.
+    pub wal: WalConfig,
+    /// Section `[durability]`.
+    pub durability: DurabilityConfig,
 }
 
 /// Resolved values: the raw text of each parameter and where it came from.
@@ -303,6 +309,8 @@ fn build(values: &Values) -> Result<Config, ConfigError> {
         },
         runtime: build_runtime(values)?,
         io: io::build_io(values)?,
+        wal: wal::build_wal(values)?,
+        durability: wal::build_durability(values)?,
     })
 }
 
@@ -373,6 +381,7 @@ pub fn entries(config: &Config) -> Vec<(&'static str, String)> {
     .into_iter()
     .chain(runtime_cores_entries(&config.runtime.cores))
     .chain(io::io_entries(&config.io))
+    .chain(wal::wal_entries(&config.wal, &config.durability))
     .collect()
 }
 
