@@ -22,7 +22,7 @@ fn file() -> Vec<u8> {
     };
     let mut out = header.encode().to_vec();
     for lsn in 1..=RECORDS {
-        encode(&record(lsn), 1, &mut out);
+        encode(&record(lsn), 1, 0, &mut out);
     }
     out
 }
@@ -47,7 +47,7 @@ fn bench(c: &mut Criterion) {
         b.iter(|| {
             out.clear();
             for r in &records {
-                encode(r, 1, &mut out);
+                encode(r, 1, 0, &mut out);
             }
             black_box(out.len())
         });

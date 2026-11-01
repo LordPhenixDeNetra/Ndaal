@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use ndaal_common::ids::{Lsn, NodeId, PartitionId};
 use ndaal_wal::{
     FileHeader, FileReader, FragmentError, Frame, MAX_FRAGMENT, Reassembler, Record, RecordType,
-    Step, WalError, encode,
+    Step, WalError, encode, encode_fragment, fragment_count,
 };
 use proptest::prelude::*;
 
@@ -45,24 +45,22 @@ fn frames(bytes: &[u8]) -> Vec<Frame<'_>> {
     out
 }
 
-/// Records written one after the other, split into files of `file_len`
-/// bytes at most (a record may straddle two files).
+/// Records written one after the other into files of `file_len` bytes at
+/// most; a fragmented record may straddle two files, each fragment seeded
+/// by the file it lands in.
 fn files(records: &[Record<'_>], file_len: usize) -> Vec<Vec<u8>> {
-    let mut stream = Vec::new();
-    for r in records {
-        encode(r, EPOCH, &mut stream);
-    }
     let mut out = vec![header(0)];
-    let mut at = 0;
-    while at < stream.len() {
-        // Cut only between frames.
-        let len = u32::from_le_bytes(stream[at + 4..at + 8].try_into().expect("4 bytes")) as usize;
-        let frame = &stream[at..at + 40 + len];
-        if out.last().is_some_and(|f| f.len() + frame.len() > file_len) {
-            out.push(header(out.len() as u64));
+    for r in records {
+        for i in 0..fragment_count(r.payload.len()) {
+            let mut frame = Vec::new();
+            encode_fragment(r, i, EPOCH, out.len() as u64 - 1, &mut frame);
+            if out.last().is_some_and(|f| f.len() + frame.len() > file_len) {
+                out.push(header(out.len() as u64));
+                frame.clear();
+                encode_fragment(r, i, EPOCH, out.len() as u64 - 1, &mut frame);
+            }
+            out.last_mut().expect("a file").extend_from_slice(&frame);
         }
-        out.last_mut().expect("a file").extend_from_slice(frame);
-        at += 40 + len;
     }
     out
 }
@@ -87,7 +85,7 @@ fn read_back(files: &[Vec<u8>]) -> Vec<Record<'static>> {
 #[test]
 fn whole_frame_is_borrowed() {
     let mut bytes = header(0);
-    encode(&record(1, b"abc".to_vec()), EPOCH, &mut bytes);
+    encode(&record(1, b"abc".to_vec()), EPOCH, 0, &mut bytes);
     let mut glue = Reassembler::default();
     let r = glue.push(frames(&bytes)[0]).expect("glue").expect("record");
     assert!(matches!(r.payload, Cow::Borrowed(b"abc")));
@@ -104,24 +102,28 @@ fn fragments_across_two_files() {
 #[test]
 fn stray_and_duplicate_fragments() {
     let mut bytes = header(0);
-    encode(&record(1, vec![1; 2 * MAX_FRAGMENT]), EPOCH, &mut bytes);
+    encode(&record(1, vec![1; 2 * MAX_FRAGMENT]), EPOCH, 0, &mut bytes);
     let f = frames(&bytes);
     let unexpected = Err(WalError::Fragment(FragmentError::Unexpected));
     // A last fragment without its first one.
     assert_eq!(Reassembler::default().push(f[1]), unexpected);
-    // A first fragment while a record is in progress.
+    // A first fragment while a record is in progress: the pending record
+    // was torn by a crash (the writer resumed), so it is abandoned.
     let mut glue = Reassembler::default();
     assert_eq!(glue.push(f[0]), Ok(None));
     assert!(glue.pending());
-    assert_eq!(glue.push(f[0]), unexpected);
+    assert_eq!(glue.push(f[0]), Ok(None));
+    assert_eq!(glue.abandoned(), 1);
+    let whole = glue.push(f[1]).expect("glue").expect("the new record");
+    assert_eq!(whole.payload.len(), 2 * MAX_FRAGMENT);
 }
 
 #[test]
 fn mismatched_fragment() {
     let mut a = header(0);
-    encode(&record(1, vec![1; 2 * MAX_FRAGMENT]), EPOCH, &mut a);
+    encode(&record(1, vec![1; 2 * MAX_FRAGMENT]), EPOCH, 0, &mut a);
     let mut b = header(0);
-    encode(&record(2, vec![1; 2 * MAX_FRAGMENT]), EPOCH, &mut b);
+    encode(&record(2, vec![1; 2 * MAX_FRAGMENT]), EPOCH, 0, &mut b);
     let mut glue = Reassembler::default();
     assert_eq!(glue.push(frames(&a)[0]), Ok(None));
     assert_eq!(

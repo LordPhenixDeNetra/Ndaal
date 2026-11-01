@@ -11,14 +11,23 @@ publish.workspace = true
 [dependencies]
 crc32c.workspace = true
 ndaal-common.workspace = true
+ndaal-io.workspace = true
+ndaal-observe.workspace = true
 thiserror.workspace = true
+tracing.workspace = true
+tokio = { workspace = true, features = ["rt", "sync", "macros"] }
 
 [dev-dependencies]
 criterion.workspace = true
 proptest.workspace = true
+tempfile.workspace = true
 
 [[bench]]
 name = "encode_decode"
+harness = false
+
+[[bench]]
+name = "append"
 harness = false
 
 [lints]
