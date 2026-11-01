@@ -33,6 +33,8 @@ pub enum Kind {
     Ratio,
     /// An integer from the first bound to the second, both included.
     Range(u32, u32),
+    /// A size such as `64MiB`, from the first bound to the second, in bytes.
+    Size(u64, u64),
 }
 
 impl Kind {
@@ -49,6 +51,7 @@ impl Kind {
             Self::Count => "count",
             Self::Ratio => "ratio",
             Self::Range(..) => "integer",
+            Self::Size(..) => "size",
         }
     }
 
@@ -65,6 +68,7 @@ impl Kind {
             Self::Count => super::runtime::parse_count(value).is_some(),
             Self::Ratio => super::io::parse_ratio(value).is_some(),
             Self::Range(min, max) => super::io::parse_range(value, min, max).is_some(),
+            Self::Size(min, max) => super::wal::parse_size(value, min, max).is_some(),
         }
     }
 
@@ -81,6 +85,11 @@ impl Kind {
             Self::Count => format!("auto or a number from 0 to {}", super::runtime::MAX_COUNT),
             Self::Ratio => "a number from 0 to 1 with at most 6 decimals, such as 0.3".into(),
             Self::Range(min, max) => format!("an integer from {min} to {max}"),
+            Self::Size(min, max) => format!(
+                "a size such as 64MiB (B, KiB, MiB or GiB), from {} to {}",
+                super::wal::format_size(min),
+                super::wal::format_size(max)
+            ),
         }
     }
 }
@@ -213,6 +222,30 @@ pub const PARAMS: &[Param] = &[
         kind: Kind::Ratio,
         default: "0.30",
         help: "share of the measured disk bandwidth left to background work",
+    },
+    Param {
+        key: "wal.file_size",
+        kind: Kind::Size(super::wal::MIN_FILE_SIZE, super::wal::MAX_FILE_SIZE),
+        default: "64MiB",
+        help: "bytes reserved for each log file",
+    },
+    Param {
+        key: "durability.async_flush_interval",
+        kind: Kind::Duration,
+        default: "100ms",
+        help: "longest delay before an async record is on disk",
+    },
+    Param {
+        key: "durability.group_commit_max_delay",
+        kind: Kind::Duration,
+        default: "200us",
+        help: "longest wait of a record for others to share its flush",
+    },
+    Param {
+        key: "durability.group_commit_max_bytes",
+        kind: Kind::Size(super::wal::MIN_GROUP_BYTES, super::wal::MAX_GROUP_BYTES),
+        default: "256KiB",
+        help: "buffered log bytes that start a flush at once",
     },
 ];
 
