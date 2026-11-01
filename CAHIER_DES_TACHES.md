@@ -74,7 +74,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
 | J01 | Fondations du projet | 26 | 26 | 100 % | ~68 | Terminé |
-| J02 | Noyau de stockage | 26 | 6 | 23 % | ~106 | En cours |
+| J02 | Noyau de stockage | 26 | 8 | 31 % | ~106 | En cours |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
 | J05 | Moteur vectoriel | 27 | 0 | 0 % | ~126 | À faire |
@@ -87,7 +87,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| **Total** | | **300** | **32** | **11 %** | **~1320** | |
+| **Total** | | **300** | **34** | **11 %** | **~1320** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -267,13 +267,13 @@ Chaque jalon produit un **résultat utilisable** :
 - [ ] **T02.08** — `ndaal-wal` : écrivain avec double tampon, écriture groupée, alignement 4 Kio, réécriture de la dernière page partielle
   - Estimation : L · Dépend de : T02.07, T02.06 · Exigences : ENF-PERF-03, ENF-DUR-01
   - Fin : le shard n'est jamais bloqué par un `fdatasync` ; débit ≥ 500 000 petits enregistrements/s par shard sur la machine de référence ; un seul vidage en cours, qui finit sur une frontière de trame et tient en 2 Mio page partielle réécrite comprise, acquittement après `fdatasync` ([ADR-033](DECISIONS.md#adr-033--zone-déchirée-bornée-du-journal), critère complété avec l'accord du responsable le 2026-10-28).
-- [ ] **T02.09** — `ndaal-wal` : fichiers préalloués, recyclage, époque de recyclage
+- [x] **T02.09** — `ndaal-wal` : fichiers préalloués, recyclage, époque de recyclage
   - Estimation : M · Dépend de : T02.08 · Exigences : ENF-DUR-01
   - Fin : un fichier recyclé ne peut jamais faire relire un ancien enregistrement (test dédié).
 - [x] **T02.10** — `ndaal-wal` : lecteur ; distinction fin de journal / corruption ; enregistrements fragmentés
   - Estimation : M · Dépend de : T02.07 · Exigences : ENF-DUR-03
   - Fin : une troncature à n'importe quel octet donne un préfixe valide ; une corruption au milieu est signalée.
-- [ ] **T02.11** — Modes de durabilité `none`, `async` (vidage périodique), `sync`
+- [x] **T02.11** — Modes de durabilité `none`, `async` (vidage périodique), `sync`
   - Estimation : S · Dépend de : T02.08 · Exigences : ENF-DUR-04
   - Fin : tests de chaque mode avec coupure simulée : seules les pertes autorisées par le mode se produisent.
 - [ ] **T02.12** — `ndaal-storage` : abstraction `Partition` (LSN, application des effets, LSN appliqué/durable, attente de LSN)
