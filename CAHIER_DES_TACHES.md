@@ -266,7 +266,7 @@ Chaque jalon produit un **résultat utilisable** :
   - Fin : tests de propriétés aller-retour ; tout octet modifié est détecté.
 - [ ] **T02.08** — `ndaal-wal` : écrivain avec double tampon, écriture groupée, alignement 4 Kio, réécriture de la dernière page partielle
   - Estimation : L · Dépend de : T02.07, T02.06 · Exigences : ENF-PERF-03, ENF-DUR-01
-  - Fin : le shard n'est jamais bloqué par un `fdatasync` ; débit ≥ 500 000 petits enregistrements/s par shard sur la machine de référence.
+  - Fin : le shard n'est jamais bloqué par un `fdatasync` ; débit ≥ 500 000 petits enregistrements/s par shard sur la machine de référence ; un seul vidage en cours, qui finit sur une frontière de trame et tient en 2 Mio page partielle réécrite comprise, acquittement après `fdatasync` ([ADR-033](DECISIONS.md#adr-033--zone-déchirée-bornée-du-journal), critère complété avec l'accord du responsable le 2026-10-28).
 - [ ] **T02.09** — `ndaal-wal` : fichiers préalloués, recyclage, époque de recyclage
   - Estimation : M · Dépend de : T02.08 · Exigences : ENF-DUR-01
   - Fin : un fichier recyclé ne peut jamais faire relire un ancien enregistrement (test dédié).

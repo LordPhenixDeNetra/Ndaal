@@ -83,9 +83,9 @@ Les enregistrements se suivent sans alignement individuel.
 | 8 | `timestamp` | Horloge du leader |
 | `len` | `payload` | Charge utile (format dépendant du type) |
 
-En-tête : 40 octets. Un enregistrement de plus de 16 Mio est **fragmenté** (bits 2 et 3) ; les fragments sont consécutifs.
+En-tête : 40 octets. Un enregistrement dont la charge utile dépasse 1 Mio est **fragmenté** en trames de 1 Mio au plus (bits 2 et 3 ; une trame entière porte les deux). Les fragments sont consécutifs, et peuvent passer d'un fichier au suivant. Les drapeaux « compressé » et « chiffré » ne sont pas encore écrits ; une trame qui les porte est refusée, jamais lue de travers. Les bits 4 à 7 sont réservés et valent zéro.
 
-**Écritures interrompues** : à la relecture, le premier enregistrement dont la CRC est invalide, la longueur absurde ou l'époque de recyclage incorrecte marque la **fin du journal valide** si aucun enregistrement valide ne le suit dans le fichier courant ; si un enregistrement valide le suit (détection par recherche de la trame suivante), il s'agit d'une **corruption** (§6.6 de l'architecture).
+**Écritures interrompues** ([ADR-033](DECISIONS.md#adr-033--zone-déchirée-bornée-du-journal)) : à la relecture, le premier enregistrement dont la CRC est invalide, la longueur absurde, le type inconnu ou l'époque de recyclage incorrecte marque la **fin du journal valide**, sauf si une trame valide commence entre **2 Mio (`MAX_FLUSH`) et 2 Mio + 1 Mio + 40 octets plus loin** dans le fichier : il s'agit alors d'une **corruption** (§6.6 de l'architecture). L'écrivain n'a jamais qu'un vidage en cours, qui finit sur une frontière de trame et tient en 2 Mio page réécrite comprise, et n'acquitte qu'après son `fdatasync` : ce qu'une coupure a déchiré n'a jamais été acquitté.
 
 **`O_DIRECT`** : les écritures sont des multiples de 4 096 octets. La dernière page partielle est complétée par des zéros sur disque et **réécrite** au vidage suivant avec les nouveaux enregistrements à la suite (les octets déjà écrits sont identiques).
 

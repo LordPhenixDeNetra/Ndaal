@@ -54,6 +54,8 @@
 | [029](#adr-029--internationalisation-limitée-aux-interfaces-humaines) | Internationalisation limitée aux interfaces humaines | Acceptée |
 | [030](#adr-030--arrêt-du-processus-en-cas-de-panique) | Arrêt du processus en cas de panique | Acceptée |
 | [031](#adr-031--console-web-embarquée-en-svelte-et-typescript) | Console web embarquée en Svelte et TypeScript | Acceptée |
+| [032](#adr-032--frontal-http-sur-axum) | Frontal HTTP sur `axum` | Acceptée |
+| [033](#adr-033--zone-déchirée-bornée-du-journal) | Zone déchirée bornée du journal | Acceptée |
 
 ---
 
@@ -634,3 +636,32 @@ Option 3. `axum` est utilisé sans ses fonctionnalités par défaut : `http1` et
 - Les flux d'octets n'existent encore qu'en version réelle : le frontal HTTP ne tourne pas dans le simulateur tant que le réseau simulé ne transporte que des trames (P-37).
 - `axum` exige des futures `Send` pour ses connexions : sans effet sur un runtime `current_thread`, mais les gestionnaires ne doivent pas garder de données non `Send` au travers d'un `await`.
 
+---
+
+## ADR-033 — Zone déchirée bornée du journal
+
+- **Statut** : Acceptée
+- **Date** : 2026-10-28
+- **Exigences liées** : ENF-DUR-01, ENF-DUR-03, ADR-004, T02.07, T02.08, T02.10
+
+### Contexte
+À la relecture du journal, FORMATS §2.3 distinguait une fin de journal (écriture interrompue) d'une corruption par la présence d'une trame valide après la première trame invalide. Mais lors d'une coupure de courant, les pages d'une même écriture peuvent atteindre le disque dans le désordre : un dernier vidage déchiré peut laisser une page invalide suivie d'une page valide. Appliquée à la lettre, la règle aurait déclaré une partition corrompue après une coupure ordinaire.
+
+### Options étudiées
+1. **La règle à la lettre** : fausses corruptions après les coupures.
+2. **Zone déchirée bornée, fragments de 16 Mio** : un vidage peut atteindre environ 17 Mio, et une vraie corruption dans les 17 derniers Mio d'un fichier passe pour une fin de journal.
+3. **Zone déchirée bornée, fragments de 1 Mio** : un vidage ne dépasse pas 2 Mio.
+
+### Décision
+Option 3.
+- L'écrivain n'a qu'un vidage en cours et n'acquitte qu'après son `fdatasync`. Chaque vidage finit sur une frontière de trame, et toute l'étendue qu'il écrit, page partielle réécrite comprise, tient en `MAX_FLUSH` = 2 Mio. La première trame invalide après une coupure commence donc dans le dernier vidage, et ce qui la suit n'a jamais été acquitté.
+- Le lecteur ne conclut à une corruption que s'il trouve une trame valide qui commence entre `o + MAX_FLUSH` et `o + MAX_FLUSH + 1 Mio + 40` octets, `o` étant le début de la première trame invalide. Des trames acquittées qui suivraient une trame abîmée sont contiguës : l'une d'elles commence forcément dans cette fenêtre. Plus près, il s'agit d'une fin interrompue ; plus loin, une trame isolée ne prouve rien, et la fenêtre borne le coût de la recherche sur des octets hostiles.
+- Les fragments passent de 16 Mio à 1 Mio, avant qu'aucun fichier de journal n'existe.
+
+### Conséquences
+- Une coupure ne fait plus passer une partition pour corrompue.
+- Une vraie corruption (bit inversé) dans les 3 derniers Mio environ d'un fichier (2 Mio plus une trame) est prise pour une fin de journal : les trames acquittées qui la suivent sont perdues sans alerte. En cluster, les réplicas couvrent ce cas (ENF-DUR-02).
+- La règle s'applique fichier par fichier : la reprise (C2) traite une fin de journal dans un fichier qui n'est pas le dernier comme une corruption.
+- La recherche vérifie une CRC d'au plus 1 Mio à chaque position de la fenêtre qui passe les contrôles bon marché : des charges utiles hostiles peuvent la rendre coûteuse (de l'ordre de 90 Go de CRC au pire). Une CRC propre à l'en-tête de trame lèverait ce coût ; à trancher avant le recyclage (P-60).
+- Un enregistrement de 512 Mio compte 512 fragments ; le surcoût d'en-tête est de 0,004 %.
+- Le critère de T02.08 impose à l'écrivain un seul vidage en cours, de 2 Mio au plus.
