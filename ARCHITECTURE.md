@@ -384,6 +384,14 @@ Le format exact est dans [FORMATS_DE_DONNEES.md §2](FORMATS_DE_DONNEES.md#2-jou
 - Le thread du shard ajoute les entrées à un tampon aligné. L'écriture et le `fdatasync` sont soumis à l'ordonnanceur d'E/S en classe **critique**, sans bloquer le thread du shard : celui-ci continue à traiter d'autres commandes et à remplir le tampon suivant (double tampon).
 - Les réponses aux clients sont envoyées quand le LSN durable dépasse celui de leur entrée.
 
+Mise en œuvre (J02-C2, `ndaal-wal::WalWriter`) :
+
+- `append` encode les trames dans le tampon en attente et rend leur position ; il n'attend jamais et répond « occupé » au-delà de deux vidages en attente (4 Mio, P8). Une tâche de vidage, sur le même cœur, n'a jamais qu'**un vidage en cours** : un seul travail `critical` du pool (écriture puis `fdatasync`), d'au plus 2 Mio page réécrite comprise, qui finit sur une frontière de trame ([ADR-033](DECISIONS.md#adr-033--zone-déchirée-bornée-du-journal)).
+- La tâche de vidage applique les règles d'écriture groupée quand quelqu'un attend la durabilité (`durable`, mode `sync`) : vidage à 256 Kio, après un tour du cœur sans nouvel ajout, ou au plus tard 200 µs après le premier enregistrement. Si seuls des enregistrements `async` attendent, elle peut grouper jusqu'à `durability.async_flush_interval` (100 ms).
+- Après une erreur d'écriture ou de `fdatasync`, l'écrivain refuse tout : on ne réessaie jamais un `fdatasync`, le nœud repart du journal.
+- **Fichiers** : le fichier suivant est préparé d'avance quand le courant est à moitié plein, sous un nom `free-…` (réservation, en-tête, `fdatasync`), puis renommé à son numéro ; la fin d'un fichier est remplie par des enregistrements `PADDING`. Un fichier libéré par les points de contrôle est recyclé avec l'époque suivante.
+- **Reprise de l'écriture** : l'écrivain repart du dernier fichier qui contient des trames, efface les 2 Mio qui suivent la fin valide (des trames non acquittées d'un vidage déchiré ne peuvent pas ressusciter derrière un nouvel enregistrement), puis écrit à la suite. Le relecteur abandonne un enregistrement fragmenté resté incomplet quand un nouvel enregistrement commence : il a été déchiré par la coupure, jamais acquitté.
+
 ### 6.4 Modes de durabilité
 
 | Mode | Acquittement envoyé quand… | Usage |
