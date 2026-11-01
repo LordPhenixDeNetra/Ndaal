@@ -167,6 +167,7 @@ Les mises à jour proposées par Dependabot sont relues comme du code : notes de
 
 - **Test d'abord** : pour toute nouvelle logique et toute correction, écrire le test, le **voir échouer**, puis écrire le code (TDD). Un test qui n'a jamais échoué ne prouve rien.
 - **Un bogue = un test** qui échouait avant la correction (ENF-QUAL-04), y compris la graine de simulation qui l'a révélé.
+- **Un bogue corrigé = une ligne** dans le [registre des défauts](docs/recherche/registre-des-defauts.md), dans la même modification : la technique qui l'a révélé, sa gravité, la correction et le test ajouté (T15.01).
 - Structures de données critiques : tests de **modèle** (comparaison avec un `BTreeMap` ou un `Vec` naïf) via `proptest`.
 - Tout ce qui décode une entrée externe ou un format a une cible de **fuzzing** (`cargo fuzz`).
 - Tout composant à effets de bord a ses scénarios de **simulation déterministe** (`ndaal-sim`), avec pannes.
