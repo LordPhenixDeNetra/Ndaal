@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793437284041,
+  "lastUpdate": 1793526744504,
   "repoUrl": "https://github.com/LordPhenixDeNetra/Ndaal",
   "entries": {
     "micro": [
@@ -355,6 +355,64 @@ window.BENCHMARK_DATA = {
             "name": "runtime/round_trip",
             "value": 2253,
             "range": "± 2",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "LordPhenixDeNetra",
+            "username": "LordPhenixDeNetra",
+            "email": "69590712+LordPhenixDeNetra@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "MOUSSA THIOR",
+            "username": "LordPhenixDeNetra",
+            "email": "69590712+LordPhenixDeNetra@users.noreply.github.com"
+          },
+          "id": "5faedc7cd15e695d6abcdf1f14664ccdb8be02fc",
+          "message": "docs: ADR-033 bounded torn zone of the log, J02-C1 spec and plan\n\n1 MiB fragments, the end-of-log rule and the writer invariant in FORMATS 2.3, the T02.08 criterion completed with the owner's approval, deferred points P-59 to P-61. ADR-032 added to the index.\n\nSigned-off-by: LordPhenixDeNetra <69590712+LordPhenixDeNetra@users.noreply.github.com>",
+          "timestamp": "2026-11-01T02:54:34Z",
+          "url": "https://github.com/LordPhenixDeNetra/Ndaal/commit/5faedc7cd15e695d6abcdf1f14664ccdb8be02fc"
+        },
+        "date": 1793526743647,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "varint/encode",
+            "value": 7675,
+            "range": "± 180",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "varint/decode",
+            "value": 7627,
+            "range": "± 51",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "crockford/decode",
+            "value": 214280,
+            "range": "± 480",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "runtime/round_trip",
+            "value": 1949,
+            "range": "± 6",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/encode",
+            "value": 493970,
+            "range": "± 4581",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/decode",
+            "value": 496587,
+            "range": "± 2031",
             "unit": "ns/iter"
           }
         ]
