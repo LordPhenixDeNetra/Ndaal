@@ -175,6 +175,16 @@ impl File for PoolFile {
             .await
     }
 
+    async fn write_all_sync_at(&self, buf: &[u8], offset: u64) -> io::Result<()> {
+        // One job: the write and its sync pass the scheduler once.
+        let data = buf.to_vec();
+        self.run(IoKind::Write, cost(data.len()), move |file| {
+            write_full_at(file, &data, offset)?;
+            file.sync_data()
+        })
+        .await
+    }
+
     async fn allocate(&self, len: u64) -> io::Result<()> {
         self.run(IoKind::Meta, UNSIZED_COST, move |file| {
             allocate_blocking(file, len)
