@@ -14,4 +14,12 @@ Un dossier par cible de `fuzz/fuzz_targets/` (même nom). Chaque fichier est une
 | `crockford-upper` | identifiant base32 Crockford canonique |
 | `crockford-lower-aliases` | le même en minuscules, avec l'alias `l` pour `1` |
 
+## `wal_reader`
+
+| Fichier | Contenu |
+|---|---|
+| `valid-three-records` | fichier de journal valide (en-tête et trois trames) |
+| `torn-last-record` | le même, avec un octet abîmé dans la dernière trame |
+| `frames-without-header` | deux trames sans en-tête de fichier (la cible en ajoute un) |
+
 Pour réintégrer le corpus d'une nuit : télécharger l'artefact, puis `cargo fuzz cmin <cible>` et une demande de fusion.

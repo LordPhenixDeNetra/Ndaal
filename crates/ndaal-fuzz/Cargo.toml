@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 ndaal-common.workspace = true
+ndaal-wal.workspace = true
 
 [dev-dependencies]
 ndaal-io.workspace = true
