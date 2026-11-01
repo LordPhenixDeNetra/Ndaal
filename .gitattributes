@@ -9,3 +9,6 @@
 # Fuzz inputs are raw bytes: never convert their line endings
 fuzz/corpus/** -text
 fuzz/corpus/README.md text eol=lf
+
+# Log files of the compatibility corpus are raw bytes (ENF-COMPAT-04)
+*.wal -text
