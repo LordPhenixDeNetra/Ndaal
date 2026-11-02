@@ -75,7 +75,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | Jalon | Intitulé | Tâches | Terminées | Avancement | Effort estimé (jours-personne) | État |
 |---|---|---|---|---|---|---|
 | J01 | Fondations du projet | 26 | 26 | 100 % | ~68 | Terminé |
-| J02 | Noyau de stockage | 26 | 8 | 31 % | ~106 | En cours |
+| J02 | Noyau de stockage | 26 | 9 | 35 % | ~106 | En cours |
 | J03 | Interface clé-valeur (RESP) | 29 | 0 | 0 % | ~106 | À faire |
 | J04 | Stockage d'objets local (S3) | 24 | 0 | 0 % | ~93 | À faire |
 | J05 | Moteur vectoriel | 27 | 0 | 0 % | ~126 | À faire |
@@ -89,7 +89,7 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
 | J15 | Publications scientifiques | 17 | 1 | 6 % | ~91 | En cours |
-| **Total** | | **317** | **35** | **11 %** | **~1411** | |
+| **Total** | | **317** | **36** | **11 %** | **~1411** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -280,7 +280,7 @@ Chaque jalon produit un **résultat utilisable** :
 - [x] **T02.11** — Modes de durabilité `none`, `async` (vidage périodique), `sync`
   - Estimation : S · Dépend de : T02.08 · Exigences : ENF-DUR-04
   - Fin : tests de chaque mode avec coupure simulée : seules les pertes autorisées par le mode se produisent.
-- [ ] **T02.12** — `ndaal-storage` : abstraction `Partition` (LSN, application des effets, LSN appliqué/durable, attente de LSN)
+- [x] **T02.12** — `ndaal-storage` : abstraction `Partition` (LSN, application des effets, LSN appliqué/durable, attente de LSN)
   - Estimation : M · Dépend de : T02.08 · Exigences : EF-TX-09
   - Fin : API documentée ; tests d'application et d'attente.
 - [ ] **T02.13** — Enveloppe de segment générique : en-tête, blocs avec CRC et compression LZ4, répertoire, pied ([FORMATS §3](FORMATS_DE_DONNEES.md#3-fichier-de-segment-générique))
