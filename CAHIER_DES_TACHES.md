@@ -88,8 +88,8 @@ Effort d'**une personne expérimentée**, hors revue et attente :
 | J12 | Exploitation | 27 | 0 | 0 % | ~113 | À faire |
 | J13 | Fonctions avancées et écosystème | 22 | 0 | 0 % | ~134 | À faire |
 | J14 | Préparation à la production | 15 | 0 | 0 % | ~76 | À faire |
-| J15 | Publications scientifiques | 17 | 0 | 0 % | ~91 | À faire |
-| **Total** | | **317** | **34** | **11 %** | **~1411** | |
+| J15 | Publications scientifiques | 17 | 1 | 6 % | ~91 | En cours |
+| **Total** | | **317** | **35** | **11 %** | **~1411** | |
 
 États possibles d'un jalon : **À faire**, **En cours**, **Terminé**. Mettez à jour les colonnes « Terminées », « Avancement » et « État » à chaque tâche cochée (ou générez-les avec le script ci-dessous).
 
@@ -1211,7 +1211,7 @@ Chaque jalon produit un **résultat utilisable** :
 
 **Règles propres** : jalon transversal, sans effet sur les critères de sortie des autres jalons. La rédaction d'un article ne commence qu'une fois ses tâches techniques terminées ; les sections stables (motivation, conception, travaux connexes) peuvent être écrites plus tôt. Les ablations sont des options de banc désactivées par défaut (CLAUDE.md §8).
 
-- [ ] **T15.01** — Registre des défauts trouvés, par technique : composant, technique qui l'a révélé (test de propriétés, simulation, fuzzing, revue, test intermittent), gravité, correction, test ajouté
+- [x] **T15.01** — Registre des défauts trouvés, par technique : composant, technique qui l'a révélé (test de propriétés, simulation, fuzzing, revue, test intermittent), gravité, correction, test ajouté
   - Estimation : S · Dépend de : — · Exigences : ENF-QUAL-04
   - Fin : registre versionné, rempli depuis J01 (dont ADR-033 et les revues finales de J02) ; chaque correction de défaut des jalons suivants y ajoute une ligne.
 - [ ] **T15.02** — Protocole de recherche : question et hypothèses réfutables de chaque article, ablations, plan de mesure, menaces à la validité
