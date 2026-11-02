@@ -13,6 +13,7 @@ ndaal-common.workspace = true
 ndaal-io.workspace = true
 ndaal-observe.workspace = true
 ndaal-runtime.workspace = true
+ndaal-storage.workspace = true
 ndaal-wal.workspace = true
 
 [dev-dependencies]
