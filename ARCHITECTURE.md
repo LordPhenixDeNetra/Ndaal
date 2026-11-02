@@ -392,6 +392,8 @@ Mise en œuvre (J02-C2, `ndaal-wal::WalWriter`) :
 - **Fichiers** : le fichier suivant est préparé d'avance quand le courant est à moitié plein, sous un nom `free-…` (réservation, en-tête, `fdatasync`), puis renommé à son numéro ; la fin d'un fichier est remplie par des enregistrements `PADDING`. Un fichier libéré par les points de contrôle est recyclé avec l'époque suivante.
 - **Reprise de l'écriture** : l'écrivain repart du dernier fichier qui contient des trames, efface les 2 Mio qui suivent la fin valide (des trames non acquittées d'un vidage déchiré ne peuvent pas ressusciter derrière un nouvel enregistrement), puis écrit à la suite. Le relecteur abandonne un enregistrement fragmenté resté incomplet quand un nouvel enregistrement commence : il a été déchiré par la coupure, jamais acquitté.
 
+La **partition** (`ndaal-storage::Partition`, T02.12) assemble le journal du shard et un moteur : elle attribue le LSN suivant, ajoute l'entrée au journal (sauf en mode `none`), applique les effets par le trait `Apply` (le même chemin servira au rejeu, T02.18, et à Raft, T09.03), puis répond selon le mode. Elle suit son LSN appliqué et son LSN durable, et permet d'attendre un LSN avec un délai (EF-TX-09). Un échec d'application après l'écriture au journal la fait passer en échec : elle ne diverge jamais de son journal ([spécification](docs/superpowers/specs/2026-11-02-t0212-partition-design.md)).
+
 ### 6.4 Modes de durabilité
 
 | Mode | Acquittement envoyé quand… | Usage |

@@ -21,7 +21,7 @@ Tâche [T15.01](../../CAHIER_DES_TACHES.md#j15--publications-scientifiques). Ce 
 
 | Technique | Défauts | Dont importants |
 |---|---|---|
-| Revue finale (relecteur neuf) | 9 | 9 |
+| Revue finale (relecteur neuf) | 14 | 14 |
 | Revue de conception | 1 | 1 |
 | Revue (J01, plan) | 2 | 2 |
 | Revue de l'auteur | 1 | 0 |
@@ -32,7 +32,7 @@ Tâche [T15.01](../../CAHIER_DES_TACHES.md#j15--publications-scientifiques). Ce 
 | Lint | 1 | 0 |
 | `cargo deny` | 1 | 1 |
 | Exécution (banc ou CI) | 4 | 1 |
-| **Total** | **29** | **17** |
+| **Total** | **34** | **22** |
 
 Aucun défaut **critique** n'a été trouvé à ce jour. Aucun défaut n'a encore été révélé par le **fuzzing** ni par un **test de propriétés** : ils ont servi à prouver les corrections. Les deux défauts trouvés par **mutation** portaient sur le modèle de pannes de la simulation elle-même, qui ne pouvait pas produire le cas qu'il devait vérifier.
 
@@ -69,3 +69,8 @@ Aucun défaut **critique** n'a été trouvé à ce jour. Aucun défaut n'a encor
 | DEF-27 | 2026-11-01 | T02.08 | `ndaal-wal::Flusher` | Les erreurs d'E/S du vidage n'étaient ni journalisées ni comptées | Revue finale | Important | `tracing::error!` et `ndaal_wal_flush_errors_total` | `failed_sync_fails_waiters_and_appends` |
 | DEF-28 | 2026-11-01 | T02.11 | `ndaal-sim::wal_crash` | Le contrôle `Async` ne pouvait jamais échouer (coupure avant la fin de la fenêtre), et le scénario n'exerçait ni basculement, ni fragments, ni recyclage | Revue finale | Important | Scénario renforcé ; témoins « sync mensonger » et « vidage paresseux » | `wal_crash_detects_a_lazy_async_flush`, `the_scenario_exercises_what_it_checks` |
 | DEF-29 | 2026-11-01 | T02.11 | `ndaal-sim::wal_crash` | La marge `Async` de 10 ms était choisie au jugé ; le scénario renforcé l'a contredite (graine 35) | Simulation (graine 35) | Mineur | Marge calculée à partir du modèle de périphérique (25 ms) | `wal_crash_loses_only_what_modes_allow` |
+| DEF-30 | 2026-11-02 | T02.12 | `ndaal-storage::Partition` | Un journal en échec pendant un `submit` en mode `Sync` rendait une erreur différente de `wait_durable` et ne faisait pas passer la partition en échec (ni compteur, ni réveil des attentes) | Revue finale | Important | Le journal en échec fait passer la partition en `Failed` | `log_failure_during_sync_fails_the_partition` |
+| DEF-31 | 2026-11-02 | T02.12 | `ndaal-storage::Partition` | La cause d'un échec d'application était jetée : ni journalisée, ni conservée | Revue finale | Important | `tracing::error!` avec la partition, le LSN et le type ; issue « inconnue » documentée sur `Failed` | Aucun (journalisation) ; le compteur est vérifié par `apply_failure_fails_the_partition` |
+| DEF-32 | 2026-11-02 | T02.12 | `ndaal-storage::Partition` | `resume(Lsn(u64::MAX))` puis `submit` paniquait (en debug) ou revenait à `Lsn(0)` (en release) : la valeur vient du disque | Revue finale | Important | `Lsn::checked_next` ; la partition passe en échec | `lsn_overflow_fails_instead_of_panicking` |
+| DEF-33 | 2026-11-02 | T02.12 | `ndaal-storage::Partition` | Un échec d'enregistrement des métriques était rapporté comme une erreur d'E/S du journal, cause d'origine perdue | Revue finale | Important | Variante `PartitionError::Metrics` qui garde la cause | Aucun (chemin non provocable avec un registre neuf) |
+| DEF-34 | 2026-11-02 | T02.12 | `ndaal-storage::Partition` | La jauge `ndaal_wal_durable_lsn` n'avançait que si quelqu'un lisait le LSN durable | Revue finale | Important | Mise à jour à chaque `submit` | `durable_gauge_follows_without_a_reader` |
