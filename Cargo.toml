@@ -30,6 +30,7 @@ ndaal-i18n = { path = "crates/ndaal-i18n", version = "0.0.0" }
 ndaal-io = { path = "crates/ndaal-io", version = "0.0.0" }
 ndaal-observe = { path = "crates/ndaal-observe", version = "0.0.0" }
 ndaal-runtime = { path = "crates/ndaal-runtime", version = "0.0.0" }
+ndaal-storage = { path = "crates/ndaal-storage", version = "0.0.0" }
 ndaal-wal = { path = "crates/ndaal-wal", version = "0.0.0" }
 ndaal-proto-http = { path = "crates/ndaal-proto-http", version = "0.0.0" }
 proptest = "1.12.0"

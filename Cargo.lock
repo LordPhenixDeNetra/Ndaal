@@ -793,6 +793,7 @@ dependencies = [
  "ndaal-io",
  "ndaal-observe",
  "ndaal-runtime",
+ "ndaal-storage",
  "ndaal-wal",
  "proptest",
 ]
@@ -800,6 +801,15 @@ dependencies = [
 [[package]]
 name = "ndaal-storage"
 version = "0.0.0"
+dependencies = [
+ "ndaal-common",
+ "ndaal-io",
+ "ndaal-observe",
+ "ndaal-wal",
+ "thiserror",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "ndaal-tier"
