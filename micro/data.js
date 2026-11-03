@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793614386167,
+  "lastUpdate": 1793700853847,
   "repoUrl": "https://github.com/LordPhenixDeNetra/Ndaal",
   "entries": {
     "micro": [
@@ -477,6 +477,70 @@ window.BENCHMARK_DATA = {
             "name": "wal/decode",
             "value": 762113,
             "range": "± 9278",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "LordPhenixDeNetra",
+            "username": "LordPhenixDeNetra",
+            "email": "69590712+LordPhenixDeNetra@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "THIOR",
+            "username": "NetraDevLPDN",
+            "email": "144937204+NetraDevLPDN@users.noreply.github.com"
+          },
+          "id": "6c1f7090aec4a3aa21340583bff190de83995ee8",
+          "message": "docs: check off T02.13\n\nCo-authored-by: NetraDevLPDN <144937204+NetraDevLPDN@users.noreply.github.com>\nSigned-off-by: LordPhenixDeNetra <69590712+LordPhenixDeNetra@users.noreply.github.com>",
+          "timestamp": "2026-11-03T04:17:33Z",
+          "url": "https://github.com/LordPhenixDeNetra/Ndaal/commit/6c1f7090aec4a3aa21340583bff190de83995ee8"
+        },
+        "date": 1793700853019,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "varint/encode",
+            "value": 5023,
+            "range": "± 122",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "varint/decode",
+            "value": 5606,
+            "range": "± 83",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "crockford/decode",
+            "value": 171052,
+            "range": "± 282",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "runtime/round_trip",
+            "value": 1742,
+            "range": "± 1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/append",
+            "value": 93919976,
+            "range": "± 5699465",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/encode",
+            "value": 762861,
+            "range": "± 12265",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/decode",
+            "value": 746790,
+            "range": "± 2558",
             "unit": "ns/iter"
           }
         ]
