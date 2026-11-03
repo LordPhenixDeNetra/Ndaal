@@ -9,16 +9,23 @@
 
 /// Every target, by name: the name of its `fuzz/fuzz_targets/` file and of
 /// its corpus directory.
-pub const TARGETS: &[(&str, Target)] =
-    &[("common_codec", common_codec), ("wal_reader", wal_reader)];
+pub const TARGETS: &[(&str, Target)] = &[
+    ("common_codec", common_codec),
+    ("segment_reader", segment_reader),
+    ("wal_reader", wal_reader),
+];
 
 /// A target body: panics when a property is violated.
 pub type Target = fn(&[u8]);
 
 use ndaal_common::base32::{decode_crockford, encode_crockford};
 use ndaal_common::bytes::{self, DecodeError};
-use ndaal_common::ids::NodeId;
-use ndaal_wal::{FileHeader, FileReader, Reassembler, Record, Step, encode};
+use ndaal_common::ids::{Lsn, NodeId, PartitionId, SegmentId};
+use ndaal_storage::segment::{
+    Compression, FOOTER_LEN, Footer, HEADER_LEN, SegmentHeader, SegmentKind, block_seed,
+    decode_block, decode_directory, encode_block,
+};
+use ndaal_wal::{FileHeader, FileReader, Reassembler, Record, Step, encode, seeded_crc_with};
 
 /// Log reader (ndaal-wal): never panics on any file, and every record it
 /// returns re-encodes into frames that read back to the same record. Bytes
@@ -107,3 +114,43 @@ fn round_trip<'a, T>(
         assert_eq!(out, consumed, "re-encoding differs from the input");
     }
 }
+
+/// Segment envelope (ndaal-storage): no decoder panics, whatever the bytes.
+/// The first byte picks a compression and the rest is sealed into a block
+/// with a valid CRC, so the fuzzer reaches the LZ4 decoder; a block that
+/// decodes re-encodes into a block that decodes to the same data. The whole
+/// input is also read as a segment file and as a directory.
+pub fn segment_reader(data: &[u8]) {
+    let seed = block_seed(FUZZ_SEGMENT, 4096);
+    if let Some((&compression, body)) = data.split_first() {
+        let mut stored = body.to_vec();
+        stored.push(compression % 3);
+        let crc = seeded_crc_with(&seed, &stored);
+        stored.extend_from_slice(&crc.to_le_bytes());
+        if let Ok(block) = decode_block(&stored, &seed) {
+            let mut again = Vec::new();
+            encode_block(&block, Compression::Lz4, &seed, &mut again)
+                .expect("a decoded block re-encodes");
+            assert_eq!(decode_block(&again, &seed).ok(), Some(block));
+        }
+    }
+    // Errors are expected: only a panic is a finding.
+    let _ = decode_directory(data, u64::MAX);
+    if data.len() >= HEADER_LEN + FOOTER_LEN {
+        let _ = SegmentHeader::decode(&data[..HEADER_LEN], SegmentKind::Sst);
+        if let Ok(footer) = Footer::decode(&data[data.len() - FOOTER_LEN..]) {
+            let start = usize::try_from(footer.directory_offset).unwrap_or(usize::MAX);
+            let end = start.saturating_add(footer.directory_len as usize);
+            if let Some(directory) = data.get(start..end) {
+                let _ = decode_directory(directory, footer.directory_offset);
+            }
+        }
+    }
+}
+
+/// Segment identifier of the fuzzed blocks.
+const FUZZ_SEGMENT: SegmentId = SegmentId {
+    partition: PartitionId(1),
+    lsn: Lsn(1),
+    counter: 0,
+};
