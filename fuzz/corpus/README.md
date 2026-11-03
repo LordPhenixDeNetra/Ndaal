@@ -14,6 +14,14 @@ Un dossier par cible de `fuzz/fuzz_targets/` (même nom). Chaque fichier est une
 | `crockford-upper` | identifiant base32 Crockford canonique |
 | `crockford-lower-aliases` | le même en minuscules, avec l'alias `l` pour `1` |
 
+## `segment_reader`
+
+| Fichier | Contenu |
+|---|---|
+| `valid-two-sections` | segment valide de deux sections (trois blocs, dont un LZ4) |
+| `torn-footer` | le même, tronqué de 100 octets (pied incomplet) |
+| `lz4-block` | octet de compression `1` puis un bloc LZ4 sans sa fin (la cible le scelle) |
+
 ## `wal_reader`
 
 | Fichier | Contenu |

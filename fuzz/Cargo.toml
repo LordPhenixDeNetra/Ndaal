@@ -26,6 +26,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "segment_reader"
+path = "fuzz_targets/segment_reader.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "wal_reader"
 path = "fuzz_targets/wal_reader.rs"
 test = false
