@@ -21,7 +21,7 @@ Tâche [T15.01](../../CAHIER_DES_TACHES.md#j15--publications-scientifiques). Ce 
 
 | Technique | Défauts | Dont importants |
 |---|---|---|
-| Revue finale (relecteur neuf) | 14 | 14 |
+| Revue finale (relecteur neuf) | 15 | 15 |
 | Revue de conception | 1 | 1 |
 | Revue (J01, plan) | 2 | 2 |
 | Revue de l'auteur | 1 | 0 |
@@ -32,7 +32,7 @@ Tâche [T15.01](../../CAHIER_DES_TACHES.md#j15--publications-scientifiques). Ce 
 | Lint | 1 | 0 |
 | `cargo deny` | 1 | 1 |
 | Exécution (banc ou CI) | 4 | 1 |
-| **Total** | **34** | **22** |
+| **Total** | **35** | **23** |
 
 Aucun défaut **critique** n'a été trouvé à ce jour. Aucun défaut n'a encore été révélé par le **fuzzing** ni par un **test de propriétés** : ils ont servi à prouver les corrections. Les deux défauts trouvés par **mutation** portaient sur le modèle de pannes de la simulation elle-même, qui ne pouvait pas produire le cas qu'il devait vérifier.
 
@@ -74,3 +74,4 @@ Aucun défaut **critique** n'a été trouvé à ce jour. Aucun défaut n'a encor
 | DEF-32 | 2026-11-02 | T02.12 | `ndaal-storage::Partition` | `resume(Lsn(u64::MAX))` puis `submit` paniquait (en debug) ou revenait à `Lsn(0)` (en release) : la valeur vient du disque | Revue finale | Important | `Lsn::checked_next` ; la partition passe en échec | `lsn_overflow_fails_instead_of_panicking` |
 | DEF-33 | 2026-11-02 | T02.12 | `ndaal-storage::Partition` | Un échec d'enregistrement des métriques était rapporté comme une erreur d'E/S du journal, cause d'origine perdue | Revue finale | Important | Variante `PartitionError::Metrics` qui garde la cause | Aucun (chemin non provocable avec un registre neuf) |
 | DEF-34 | 2026-11-02 | T02.12 | `ndaal-storage::Partition` | La jauge `ndaal_wal_durable_lsn` n'avançait que si quelqu'un lisait le LSN durable | Revue finale | Important | Mise à jour à chaque `submit` | `durable_gauge_follows_without_a_reader` |
+| DEF-35 | 2026-11-03 | T02.13 | `ndaal-storage::segment` | L'écrivain acceptait un en-tête avec `min_lsn > max_lsn`, puis écrivait et synchronisait un segment que le lecteur refuse : publié par le manifeste, il deviendrait illisible | Revue finale | Important | `create` refuse cet en-tête (`Misuse`) | `header_the_reader_refuses_is_refused_at_create` |

@@ -699,3 +699,26 @@ Option 4.
 - Chaque trame coûte 4 octets de plus (moins de 4 % pour un enregistrement de 100 octets), et chaque CRC 16 octets de calcul en plus.
 - Un enregistrement coupé entre deux fichiers voit chaque fragment ensemencé par le fichier où il se trouve (`encode_fragment`).
 
+---
+
+## ADR-035 — CRC ensemencées des segments
+
+- **Statut** : Acceptée
+- **Date** : 2026-11-03
+- **Exigences liées** : ENF-DUR-03, ADR-034, T02.13
+
+### Contexte
+L'enveloppe des segments (FORMATS §3) protégeait chaque bloc par une CRC de ses seules données. Un bloc lu au mauvais endroit (bogue d'index, poignée corrompue qui tombe sur un autre bloc) ou recopié d'un autre segment reste valide en lui-même et passerait la vérification. Le journal a déjà réglé ce problème pour ses trames (ADR-034).
+
+### Options étudiées
+1. **CRC masquée simple** : un bloc peut être recopié tel quel d'un segment à l'autre (compactage) ; un bloc mal placé n'est pas détecté.
+2. **CRC ensemencée par `segment_id` et l'offset du bloc**.
+
+### Décision
+Option 2. La CRC d'un bloc, et celle du répertoire, portent sur 24 octets de graine (`segment_id` sur 16 octets gros-boutistes, puis l'offset sur 8 octets petit-boutistes) suivis des données couvertes, avec le masque de LevelDB. Les CRC de l'en-tête et du pied restent simples : l'en-tête porte lui-même le `segment_id`.
+
+### Conséquences
+- Un bloc lu à un autre offset, ou venu d'un autre segment, échoue à la CRC.
+- Aucun coût à l'exécution autre que 24 octets de calcul par bloc.
+- Un bloc ne peut plus être recopié brut d'un segment à l'autre : le compactage recalcule sa CRC, ce qui reste bien moins cher qu'une décompression et une recompression.
+- `ndaal-wal` expose `seeded_crc_with(graine, données)`, que réutilisent le journal et les segments.

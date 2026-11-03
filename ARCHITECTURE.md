@@ -133,7 +133,7 @@ ndaal/
 │   ├── ndaal-object/            # métadonnées objet, multipart, versions, cycle de vie
 │   ├── ndaal-blob/              # stockage des octets d'objets : local, externe, distribué (Reed-Solomon)
 │   ├── ndaal-tx/                # transactions multi-modèles, préconditions, règles
-│   ├── ndaal-storage/           # partition, manifeste, segments, compactage, points de contrôle
+│   ├── ndaal-storage/           # partition, manifeste, segments (enveloppe : segment/), compactage, points de contrôle
 │   ├── ndaal-tier/              # cache hybride, température, stockage objet comme fondation
 │   ├── ndaal-repl/              # Raft (openraft), stockage du journal Raft, instantanés
 │   ├── ndaal-cluster/           # plan de contrôle, appartenance, carte des partitions, rééquilibrage, routage
