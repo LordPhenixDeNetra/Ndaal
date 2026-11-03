@@ -10,6 +10,7 @@ mod apply;
 mod error;
 mod metrics;
 mod partition;
+pub mod segment;
 mod wait;
 
 pub use apply::{Apply, ApplyError};

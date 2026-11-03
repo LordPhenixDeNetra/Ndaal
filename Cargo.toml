@@ -24,6 +24,7 @@ fluent-bundle = "0.16.0"
 fluent-syntax = "0.12.0"
 getrandom = "0.4.3"
 libc = "0.2.190"
+lz4_flex = { version = "0.14.0", default-features = false, features = ["std", "safe-encode", "safe-decode"] }
 ndaal-common = { path = "crates/ndaal-common", version = "0.0.0" }
 ndaal-fuzz = { path = "crates/ndaal-fuzz", version = "0.0.0" }
 ndaal-i18n = { path = "crates/ndaal-i18n", version = "0.0.0" }
@@ -34,6 +35,7 @@ ndaal-storage = { path = "crates/ndaal-storage", version = "0.0.0" }
 ndaal-wal = { path = "crates/ndaal-wal", version = "0.0.0" }
 ndaal-proto-http = { path = "crates/ndaal-proto-http", version = "0.0.0" }
 proptest = "1.12.0"
+prost = { version = "0.14.4", default-features = false, features = ["derive", "std"] }
 rtrb = "0.4.0"
 sys-locale = "0.3.2"
 tempfile = "3.27.0"
