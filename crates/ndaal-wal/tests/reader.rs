@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use ndaal_common::ids::{Lsn, NodeId, PartitionId};
 use ndaal_wal::{
     FRAME_HEADER_LEN, FileHeader, FileReader, HEADER_LEN, MAX_FLUSH, MAX_FRAGMENT, Record,
-    RecordType, Step, WalError, encode, seeded_crc,
+    RecordType, Step, WalError, encode, seeded_crc, seeded_crc_with,
 };
 
 const EPOCH: u64 = 5;
@@ -298,4 +298,12 @@ fn frame_copied_from_another_file_is_rejected() {
     let (frames, end) = read_all(&bytes);
     assert!(frames.is_empty(), "{frames:?}");
     assert_eq!(end, Ok(Step::End { valid_len: valid }));
+}
+
+#[test]
+fn seeded_crc_is_unchanged() {
+    // Frozen before seeded_crc_with existed: the log's bytes never change.
+    assert_eq!(seeded_crc(7, 9, b"abc"), 3_673_873_830);
+    let seed = [7u64.to_le_bytes(), 9u64.to_le_bytes()].concat();
+    assert_eq!(seeded_crc_with(&seed, b"abc"), 3_673_873_830);
 }

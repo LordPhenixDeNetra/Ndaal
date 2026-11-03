@@ -15,7 +15,7 @@ mod reassemble;
 mod record;
 mod writer;
 
-pub use crc::{masked_crc, seeded_crc};
+pub use crc::{masked_crc, seeded_crc, seeded_crc_with};
 pub use error::{FragmentError, WalError};
 pub use header::{FORMAT, FileHeader, HEADER_LEN};
 pub use reader::{FileReader, Step};

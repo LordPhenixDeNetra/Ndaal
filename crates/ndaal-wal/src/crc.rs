@@ -16,7 +16,13 @@ pub fn seeded_crc(epoch: u64, file_no: u64, data: &[u8]) -> u32 {
     let mut seed = [0u8; 16];
     seed[..8].copy_from_slice(&epoch.to_le_bytes());
     seed[8..].copy_from_slice(&file_no.to_le_bytes());
-    mask(crc32c::crc32c_append(crc32c::crc32c(&seed), data))
+    seeded_crc_with(&seed, data)
+}
+
+/// [`masked_crc`] of `data` preceded by `seed`: bytes checked under another
+/// seed (another file, another offset) fail it (ADR-034, ADR-035).
+pub fn seeded_crc_with(seed: &[u8], data: &[u8]) -> u32 {
+    mask(crc32c::crc32c_append(crc32c::crc32c(seed), data))
 }
 
 fn mask(crc: u32) -> u32 {
