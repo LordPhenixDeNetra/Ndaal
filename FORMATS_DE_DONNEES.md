@@ -189,21 +189,24 @@ Tous les segments (SST, vectoriels, métadonnées objet) partagent une **envelop
 └──────────────────────────────────┘
 ```
 
-### 3.1 En-tête
+Chaque section commence à un offset **multiple de 4 096** : l'écrivain bourre de zéros jusqu'à la frontière suivante. Une section peut ainsi être lue en `O_DIRECT` ou projetée en mémoire sans recopie. Les blocs d'une section, eux, se suivent sans alignement. Le répertoire suit la dernière section ; un bourrage le sépare du pied, lui aussi aligné. Implémentation : `ndaal-storage::segment` (T02.13).
 
-| Taille | Champ | Description |
-|---|---|---|
-| 8 | `magic` | `NDLSEG01` |
-| 2 | `format` | Version de l'enveloppe |
-| 2 | `kind` | `1` SST clé-valeur, `2` vectoriel, `3` métadonnées objet, `4` valeurs volumineuses, `5` charge utile |
-| 2 | `kind_format` | Version du format spécifique |
-| 2 | réservé | |
-| 16 | `segment_id` | Identifiant (§10) |
-| 4 | `partition_id` | |
-| 8 | `min_lsn` / 8 `max_lsn` | Plage de LSN couverte |
-| 16 | `key_id` | Clé de chiffrement (zéros si non chiffré) |
-| … | réservé | |
-| 4 | `crc` | CRC de l'en-tête |
+### 3.1 En-tête (4 096 octets, offset 0)
+
+| Offset | Taille | Champ | Description |
+|---|---|---|---|
+| 0 | 8 | `magic` | `NDLSEG01` |
+| 8 | 2 | `format` | Version de l'enveloppe (1) |
+| 10 | 2 | `kind` | `1` SST clé-valeur, `2` vectoriel, `3` métadonnées objet, `4` valeurs volumineuses, `5` charge utile |
+| 12 | 2 | `kind_format` | Version du format spécifique, vérifiée par le moteur |
+| 14 | 2 | réservé | Nul |
+| 16 | 16 | `segment_id` | Identifiant (§10), gros-boutiste |
+| 32 | 4 | `partition_id` | |
+| 36 | 8 | `min_lsn` | Plage de LSN couverte, `min_lsn ≤ max_lsn` |
+| 44 | 8 | `max_lsn` | |
+| 52 | 16 | `key_id` | Clé de chiffrement ; zéros si non chiffré (seul cas accepté avant T11.07) |
+| 68 | 4 024 | réservé | Nul |
+| 4 092 | 4 | `crc` | CRC masqué des octets 0 à 4 091 |
 
 ### 3.2 Bloc
 
@@ -211,27 +214,55 @@ Chaque section est une suite de blocs :
 
 | Taille | Champ |
 |---|---|
-| `n` | Données (éventuellement compressées puis chiffrées) |
-| 1 | Type de compression |
-| 4 | CRC32C masqué des données stockées + octet de compression |
+| `n` | Données stockées : brutes, ou `taille décompressée (4) · flux LZ4` |
+| 1 | Type de compression (`0` aucune, `1` LZ4 ; toute autre valeur est une corruption) |
+| 4 | CRC32C masqué, **ensemencé** par `segment_id (16, gros-boutiste) · offset du bloc (8)`, sur les données stockées et l'octet de compression ([ADR-035](DECISIONS.md#adr-035--crc-ensemencées-des-segments)) |
 
-Si chiffré, les données stockées sont `nonce (12) || chiffré || tag (16)`.
+- `MAX_BLOCK_LEN` = 16 Mio, en taille stockée comme décompressée ; la taille annoncée d'un bloc LZ4 est vérifiée **avant** toute allocation, et la décompression doit la produire exactement.
+- L'écrivain stocke un bloc sans compression quand LZ4 ne réduit pas sa taille.
+- Le moteur garde la position de ses blocs (`offset`, longueur stockée avec les 5 octets de fin) ; l'enveloppe refuse de lire un bloc qui ne tient pas entièrement dans une section.
+
+Si chiffré (T11.07), les données stockées seront `nonce (12) || chiffré || tag (16)`.
 
 ### 3.3 Répertoire des sections
 
-Encodé en protobuf (`SectionDirectory`) : pour chaque section, son identifiant de type, son décalage, sa taille, son nombre de blocs, ses propriétés propres (par exemple taille de bloc non compressée).
+Encodé en protobuf (`SectionDirectory`, messages dérivés à la main avec `prost`, sans `protoc`) :
 
-### 3.4 Pied de fichier
+```proto
+message SectionDirectory { repeated SectionEntry sections = 1; }
+message SectionEntry {
+  uint32 kind = 1;        // propre au type de segment
+  uint64 offset = 2;      // multiple de 4 096
+  uint64 len = 3;         // octets de blocs, sans le bourrage
+  uint32 blocks = 4;
+  bytes properties = 5;   // propres au moteur
+}
+```
 
-| Taille | Champ |
-|---|---|
-| 8 | Décalage du répertoire |
-| 4 | Taille du répertoire |
-| 4 | CRC du répertoire |
-| … | réservé |
-| 8 | `magic` : `STRSEGND` |
+Taille d'au plus 16 Mio. Les sections sont triées par offset, alignées, disjointes, non vides, et comprises entre la fin de l'en-tête et le début du répertoire.
 
-Un segment est valide si le pied, le répertoire et l'en-tête sont valides. Chaque bloc est vérifié **à chaque lecture**.
+### 3.4 Pied de fichier (4 096 octets, en fin de fichier)
+
+| Offset | Taille | Champ |
+|---|---|---|
+| 0 | 8 | Décalage du répertoire |
+| 8 | 4 | Taille du répertoire |
+| 12 | 4 | CRC du répertoire, ensemencée par `segment_id · offset du répertoire` |
+| 16 | 2 | `format`, égal à celui de l'en-tête |
+| 18 | 4 066 | réservé, nul |
+| 4 084 | 4 | CRC masqué des octets 0 à 4 083 |
+| 4 088 | 8 | `magic` : `STRSEGND` |
+
+### 3.5 Ouverture
+
+Dans cet ordre, la première vérification qui échoue rend une erreur typée :
+1. taille du fichier d'au moins 8 Kio et multiple de 4 096 (un fichier coupé avant la fin de l'écriture échoue ici ou à l'étape 2) ;
+2. pied valide (magique, CRC, format, zones réservées) ;
+3. en-tête valide et du type attendu (magique, CRC, format, zones réservées, `key_id` nul, plage de LSN) ;
+4. même `format` dans l'en-tête et le pied ;
+5. répertoire valide (bornes, taille, CRC, règles du §3.3).
+
+Chaque bloc est ensuite vérifié **à chaque lecture**. Toute zone réservée est vérifiée nulle : une version future qui l'utilise est refusée franchement plutôt que mal lue.
 
 ---
 
