@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793786657199,
+  "lastUpdate": 1793872838128,
   "repoUrl": "https://github.com/LordPhenixDeNetra/Ndaal",
   "entries": {
     "micro": [
@@ -605,6 +605,70 @@ window.BENCHMARK_DATA = {
             "name": "wal/decode",
             "value": 533035,
             "range": "± 24838",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]",
+            "email": "49699333+dependabot[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "MOUSSA THIOR",
+            "username": "LordPhenixDeNetra",
+            "email": "69590712+LordPhenixDeNetra@users.noreply.github.com"
+          },
+          "id": "ebbe210aea56a487c224c588d744ace1ce682a62",
+          "message": "build(deps): Bump libc from 0.2.190 to 0.2.191\n\nBumps [libc](https://github.com/rust-lang/libc) from 0.2.190 to 0.2.191.\n- [Release notes](https://github.com/rust-lang/libc/releases)\n- [Changelog](https://github.com/rust-lang/libc/blob/0.2.191/CHANGELOG.md)\n- [Commits](https://github.com/rust-lang/libc/compare/0.2.190...0.2.191)\n\n---\nupdated-dependencies:\n- dependency-name: libc\n  dependency-version: 0.2.191\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2026-11-03T21:06:14Z",
+          "url": "https://github.com/LordPhenixDeNetra/Ndaal/commit/ebbe210aea56a487c224c588d744ace1ce682a62"
+        },
+        "date": 1793872837703,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "varint/encode",
+            "value": 7479,
+            "range": "± 278",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "varint/decode",
+            "value": 7604,
+            "range": "± 54",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "crockford/decode",
+            "value": 208796,
+            "range": "± 2231",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "runtime/round_trip",
+            "value": 1937,
+            "range": "± 9",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/append",
+            "value": 35505750,
+            "range": "± 1731999",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/encode",
+            "value": 964379,
+            "range": "± 10946",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/decode",
+            "value": 928551,
+            "range": "± 9638",
             "unit": "ns/iter"
           }
         ]
