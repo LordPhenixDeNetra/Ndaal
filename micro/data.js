@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794043396219,
+  "lastUpdate": 1794130847860,
   "repoUrl": "https://github.com/LordPhenixDeNetra/Ndaal",
   "entries": {
     "micro": [
@@ -797,6 +797,70 @@ window.BENCHMARK_DATA = {
             "name": "wal/decode",
             "value": 926126,
             "range": "± 8773",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "LordPhenixDeNetra",
+            "username": "LordPhenixDeNetra",
+            "email": "69590712+LordPhenixDeNetra@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "THIOR",
+            "username": "NetraDevLPDN",
+            "email": "144937204+NetraDevLPDN@users.noreply.github.com"
+          },
+          "id": "c08ad16909071924b9b4146c85e56b96d3b103e3",
+          "message": "docs: internal keys spec, plan and defects DEF-36, DEF-37 (T02.14)\n\nCo-authored-by: NetraDevLPDN <144937204+NetraDevLPDN@users.noreply.github.com>\nSigned-off-by: LordPhenixDeNetra <69590712+LordPhenixDeNetra@users.noreply.github.com>",
+          "timestamp": "2026-11-08T03:29:09Z",
+          "url": "https://github.com/LordPhenixDeNetra/Ndaal/commit/c08ad16909071924b9b4146c85e56b96d3b103e3"
+        },
+        "date": 1794130846974,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "varint/encode",
+            "value": 7445,
+            "range": "± 274",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "varint/decode",
+            "value": 8539,
+            "range": "± 19",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "crockford/decode",
+            "value": 204961,
+            "range": "± 1111",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "runtime/round_trip",
+            "value": 1954,
+            "range": "± 13",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/append",
+            "value": 35568349,
+            "range": "± 1291400",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/encode",
+            "value": 963183,
+            "range": "± 2632",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/decode",
+            "value": 926735,
+            "range": "± 7509",
             "unit": "ns/iter"
           }
         ]
