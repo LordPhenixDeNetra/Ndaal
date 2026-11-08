@@ -13,6 +13,8 @@ Un dossier par cible de `fuzz/fuzz_targets/` (même nom). Chaque fichier est une
 | `str-accents` | chaîne UTF-8 préfixée, avec accents |
 | `crockford-upper` | identifiant base32 Crockford canonique |
 | `crockford-lower-aliases` | le même en minuscules, avec l'alias `l` pour `1` |
+| `escaped-with-zero` | clé interne échappée `a` · `0x00` · `b` (`61 00 FF 62 00 00`) |
+| `escaped-bad-escape` | échappement invalide (`61 00 01`) |
 
 ## `segment_reader`
 
