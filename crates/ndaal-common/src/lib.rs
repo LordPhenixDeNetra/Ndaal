@@ -8,5 +8,6 @@ pub mod collections;
 pub mod config;
 pub mod error;
 pub mod ids;
+pub mod keys;
 pub mod request;
 mod ulid;
