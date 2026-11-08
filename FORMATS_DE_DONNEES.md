@@ -439,7 +439,7 @@ Toutes les entrées ordonnées d'une partition partagent un espace de clés inte
 | `0x30` | Index inverse des liens | `bucket_id` · `clé objet` · `modèle (1)` · `référence` |
 | `0x7F` | Système | Données internes de la partition |
 
-**Échappement** des clés utilisateur pour préserver l'ordre et permettre les suffixes : `0x00` → `0x00 0xFF`, terminaison `0x00 0x00`. Les entiers en **gros-boutiste** dans les clés pour que l'ordre des octets corresponde à l'ordre numérique. La version inversée (`u64::MAX - version`) place la version la plus récente en premier.
+**Échappement** des clés utilisateur pour préserver l'ordre et permettre les suffixes : `0x00` → `0x00 0xFF`, terminaison `0x00 0x00`. Pour le type `0x10`, le `0x00 0x00` de la table est cette terminaison, pas deux octets de plus. Implémentation des briques (préfixe, échappement, entiers, version inversée) : `ndaal-common::keys` (T02.14) ; chaque moteur compose ses clés. Les entiers en **gros-boutiste** dans les clés pour que l'ordre des octets corresponde à l'ordre numérique. La version inversée (`u64::MAX - version`) place la version la plus récente en premier.
 
 ---
 
