@@ -21,6 +21,7 @@ pub type Target = fn(&[u8]);
 use ndaal_common::base32::{decode_crockford, encode_crockford};
 use ndaal_common::bytes::{self, DecodeError};
 use ndaal_common::ids::{Lsn, NodeId, PartitionId, SegmentId};
+use ndaal_common::keys;
 use ndaal_storage::segment::{
     Compression, FOOTER_LEN, Footer, HEADER_LEN, SegmentHeader, SegmentKind, block_seed,
     decode_block, decode_directory, encode_block,
@@ -76,9 +77,10 @@ fn read_one(header: &FileHeader, record: &Record<'_>) -> Option<Record<'static>>
     None
 }
 
-/// Decoders of `ndaal_common::bytes` and `ndaal_common::base32`: never panic,
-/// and whatever decodes re-encodes to exactly the bytes it consumed (every
-/// encoding is canonical: varints are minimal).
+/// Decoders of `ndaal_common::bytes`, `ndaal_common::keys` and
+/// `ndaal_common::base32`: never panic, and whatever decodes re-encodes to
+/// exactly the bytes it consumed (every encoding is canonical: varints are
+/// minimal, a 0x00 of an escaped key has one escape).
 pub fn common_codec(data: &[u8]) {
     round_trip(data, bytes::get_varint, |out, v| bytes::put_varint(out, *v));
     round_trip(data, bytes::get_u16_le, |out, v| bytes::put_u16_le(out, *v));
@@ -86,6 +88,12 @@ pub fn common_codec(data: &[u8]) {
     round_trip(data, bytes::get_u64_le, |out, v| bytes::put_u64_le(out, *v));
     round_trip(data, bytes::get_bytes, |out, v| bytes::put_bytes(out, v));
     round_trip(data, bytes::get_str, |out, v| bytes::put_str(out, v));
+    round_trip(data, keys::get_escaped, |out, v| keys::put_escaped(out, v));
+    round_trip(data, keys::get_prefix, |out, (kind, ns)| {
+        keys::put_prefix(out, *kind, *ns)
+    });
+    round_trip(data, keys::get_u32_be, |out, v| keys::put_u32_be(out, *v));
+    round_trip(data, keys::get_u64_be, |out, v| keys::put_u64_be(out, *v));
     let mut input = data;
     if let Ok(v) = bytes::get_varint(&mut input) {
         assert_eq!(bytes::zigzag_encode(bytes::zigzag_decode(v)), v);
