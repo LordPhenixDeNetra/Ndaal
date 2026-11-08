@@ -108,7 +108,7 @@ pub fn get_bytes<'a>(input: &mut &'a [u8]) -> Result<&'a [u8], DecodeError> {
 }
 
 /// Takes exactly `N` bytes, or reports how many were missing.
-fn take<const N: usize>(input: &mut &[u8]) -> Result<[u8; N], DecodeError> {
+pub(crate) fn take<const N: usize>(input: &mut &[u8]) -> Result<[u8; N], DecodeError> {
     let Some((head, tail)) = input.split_first_chunk::<N>() else {
         return Err(DecodeError::UnexpectedEnd {
             needed: N,
