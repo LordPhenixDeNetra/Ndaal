@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794999023701,
+  "lastUpdate": 1795085529471,
   "repoUrl": "https://github.com/LordPhenixDeNetra/Ndaal",
   "entries": {
     "micro": [
@@ -1501,6 +1501,70 @@ window.BENCHMARK_DATA = {
             "name": "wal/decode",
             "value": 664640,
             "range": "± 6485",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]",
+            "email": "49699333+dependabot[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "THIOR",
+            "username": "NetraDevLPDN",
+            "email": "144937204+NetraDevLPDN@users.noreply.github.com"
+          },
+          "id": "287c0065393c132b31532a4cb43dfec0fc2bf242",
+          "message": "build(deps): Bump crc32c from 0.6.8 to 0.6.9\n\nBumps [crc32c](https://github.com/zowens/crc32c) from 0.6.8 to 0.6.9.\n- [Commits](https://github.com/zowens/crc32c/compare/v0.6.8...v0.6.9)\n\n---\nupdated-dependencies:\n- dependency-name: crc32c\n  dependency-version: 0.6.9\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2026-11-10T21:06:00Z",
+          "url": "https://github.com/LordPhenixDeNetra/Ndaal/commit/287c0065393c132b31532a4cb43dfec0fc2bf242"
+        },
+        "date": 1795085529159,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "varint/encode",
+            "value": 5189,
+            "range": "± 10",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "varint/decode",
+            "value": 6162,
+            "range": "± 124",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "crockford/decode",
+            "value": 177683,
+            "range": "± 361",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "runtime/round_trip",
+            "value": 1133,
+            "range": "± 3",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/append",
+            "value": 65435709,
+            "range": "± 20602",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/encode",
+            "value": 396592,
+            "range": "± 2753",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "wal/decode",
+            "value": 412934,
+            "range": "± 1812",
             "unit": "ns/iter"
           }
         ]
